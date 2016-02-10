@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(quadcopter_slam)
+project(quadroter_auto_nav)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -99,7 +99,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES quadcopter_slam
+#  LIBRARIES quadroter_auto_nav
 #  CATKIN_DEPENDS roscpp
 #  DEPENDS system_lib
 )
@@ -116,21 +116,21 @@ include_directories(
 )
 
 ## Declare a C++ library
-# add_library(quadcopter_slam
-#   src/${PROJECT_NAME}/quadcopter_slam.cpp
+# add_library(quadroter_auto_nav
+#   src/${PROJECT_NAME}/quadroter_auto_nav.cpp
 # )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-# add_dependencies(quadcopter_slam ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(quadroter_auto_nav ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
  add_executable(main src/main.cpp src/AutoNav.h src/AutoNav.cpp )
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-# add_dependencies(quadcopter_slam_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(quadroter_auto_nav_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(
@@ -153,7 +153,7 @@ include_directories(
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS quadcopter_slam quadcopter_slam_node
+# install(TARGETS quadroter_auto_nav quadroter_auto_nav_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -178,7 +178,7 @@ include_directories(
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_quadcopter_slam.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_quadroter_auto_nav.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

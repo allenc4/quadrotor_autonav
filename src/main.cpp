@@ -3,7 +3,7 @@
 
 int main(int argc, char** argv){
 
-	ros::init(argc, argv, "auto_nav");
+	ros::init(argc, argv, "quadroter_auto_nav");
 
 	ros::NodeHandle nh;
 
