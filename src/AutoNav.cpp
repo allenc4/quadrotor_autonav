@@ -19,7 +19,7 @@ AutoNav::AutoNav(ros::NodeHandle &n)
 {
 	nh = n;
 	cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("/cmd_vel", 1);
-	map_sub = nh.subscribe("/map", 1, mapCallback);
+	map_sub = nh.subscribe("/map", 1, mapCallback); //topic, queuesize, callback
 	sonar_sub = nh.subscribe("/sonar_height", 1, sonarCallback);
 }
 
@@ -40,6 +40,7 @@ void AutoNav::doNav(){
 	
 	while(nh.ok())
 	{
+		ros::spinOnce(); // needed to get subscribed messages
 		if(height == NULL || height->range < 1)
 		{
 			std::cout << "Up" << std::endl;
@@ -57,12 +58,10 @@ void AutoNav::doNav(){
 			std::cout << "Sleep" << std::endl;
 			ros::Duration(2).sleep(); // sleep in seconds
 		}
-
-    	ros::spinOnce(); // needed to get subscribed messages
 	}
 }
 
 void AutoNav::land()
 {
-	sendMessage(0,0,-0.5,0,0,0);
+	sendMessage(0,0,-0.25,0,0,0);
 }

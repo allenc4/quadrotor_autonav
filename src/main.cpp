@@ -1,5 +1,5 @@
 #include <iostream>
-#include <signal.h>
+#include "signal.h"
 #include <ros/ros.h>
 #include "AutoNav.h"
 
@@ -9,17 +9,19 @@ void handleTerm(int sig)
 {
 	std::cout << "SIGNAL: " << sig << " Landing! DO NOT FORCE TERMINATE!!!" << std::endl;
 	an->land();
+	exit(1);
 }
 
 int main(int argc, char** argv){
 
 	ros::init(argc, argv, "quadroter_auto_nav");
-	
+	ros::NodeHandle nh;
+
 	signal(SIGABRT,handleTerm);
     signal(SIGTERM,handleTerm);
     signal(SIGINT, handleTerm);
 
-	ros::NodeHandle nh;
+	
 	an.reset(new AutoNav(nh));
 
 	an->doNav();
