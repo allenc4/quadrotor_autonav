@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 
 <launch>
-	
+	<include file="$(find hector_quadrotor_demo)/launch/indoor_slam_gazebo.launch">
+	</include>
    
+   <node name="main" pkg="quadroter_auto_nav" type="main" />
+
 </launch>
