@@ -37,26 +37,76 @@ void AutoNav::sendMessage(float linX, float linY, float linZ, float angX, float 
 }
 
 void AutoNav::doNav(){
-	
+
+	float lx = 0.0, ly = 0.0f, lz = 0.0f;
+	float ax = 0.0f, ay = 0.0f, az = 0.0f;
+
+	int gridx, gridy;
+	int currentIndex, north, south, east, west;
+
 	while(nh.ok())
 	{
 		ros::spinOnce(); // needed to get subscribed messages
-		if(height == NULL || height->range < 1)
+		tf::StampedTransform transform;
+
+		lx = ly = lz = 0;
+		ax = ay = az = 0;
+		north = south = west = east = -1;
+
+		try{
+			//gets the current transform from the map to the base_link
+			listener.lookupTransform("/map", "/base_link", ros::Time(0), transform);
+			//gets us our current x,y coordinate in the occupancy grid
+			gridx = (unsigned int)((transform.getOrigin().x() - map->info.origin.position.x) / map->info.resolution);
+			gridy = (unsigned int)((transform.getOrigin().y() - map->info.origin.position.y) / map->info.resolution);
+			//converts current x,y to single index
+			currentIndex = (gridx+1) * (gridy+1) - 1;
+
+			//TODO: Get circle encompassing front/left/right of quadcoptor with values of occupancy if we are going to hit something stop
+
+			//need to get these to not be under the quadrotor
+			if(gridy > 0)
+			{
+				north = (gridx+1) * (gridy) -1;				//get the immediatly next north grid point
+			}
+			if(gridy < map->info.height - 1)
+			{
+				south = (gridx+1) * (gridy+2) -1;			//gets the immeditaly next south grid point
+			}
+			if(gridx < map->info.width)
+			{
+				east = (gridx+2) * (gridy+1) -1;			//gets the immeditaly next east grid point
+			}
+			if(gridx > 0)
+			{
+				west = (gridx) * (gridy+1) - 1;				//gets the immeditaly next west grid point
+			}
+
+			//print all the shits
+			std::cout << "(" << transform.getOrigin().x() << ", " << transform.getOrigin().y() << ", " << transform.getOrigin().z() << ") (" 
+			<< gridx << ", " << gridy << ") (" << currentIndex  << ", " << north << ", " << south << ", " << east << ", " << west << ")" << std::endl;
+
+
+			//go up until we are one meter off the ground
+			if(transform.getOrigin().z() < 1)
+			{
+				std::cout << "Up" << std::endl;
+				lz = 0.5;
+			}else if(map->data[currentIndex] > 0)
+			{
+				lx = 0;
+				ly = 0;
+				ax = 0.5;
+			}else
+			{
+				lx = 0.5;
+			}
+
+			sendMessage(lx,ly,lz,ax,ay,az);
+		}catch(tf::TransformException &ex)
 		{
-			std::cout << "Up" << std::endl;
-			sendMessage(0,0,0.5,0,0,0);
-			std::cout << "Sleep" << std::endl;
-			ros::Duration(2).sleep(); // sleep in seconds
-		}else
-		{
-			std::cout << "Move" << std::endl;
-			sendMessage(0,-0.5,0,0,0,0);
-			std::cout << "Sleep" << std::endl;
-			ros::Duration(2).sleep(); // sleep in seconds
-			std::cout << "Move" << std::endl;
-			sendMessage(0,0.5,0,0,0,0);
-			std::cout << "Sleep" << std::endl;
-			ros::Duration(2).sleep(); // sleep in seconds
+			ROS_ERROR("%s", ex.what());
+			continue;
 		}
 	}
 }

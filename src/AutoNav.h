@@ -1,13 +1,21 @@
 #ifndef AUTO_NAV
 #define AUTO_NAV
 
-#include <ros/ros.h>
+//C++ Headers
+#include <cstddef>
 #include <iostream>
 #include <unistd.h>
+
+//ROS Headers
+#include <ros/ros.h>
+
+//ROS Topic Headers
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <sensor_msgs/Range.h>
-#include <cstddef>
+
+//TF Headers
+#include <tf/transform_listener.h>
 
 class AutoNav{
 
@@ -22,6 +30,7 @@ private:
 	ros::Publisher cmd_vel_pub;
 	ros::Subscriber map_sub;
 	ros::Subscriber sonar_sub;
+	tf::TransformListener listener;
 };
 
 #endif
