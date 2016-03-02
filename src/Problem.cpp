@@ -17,7 +17,7 @@ std::vector<State> Problem::getSuccessors(State state){
 	std::vector<State> successors;
 	if(state.y > 0)
 	{
-		int northIndex = (state.x+1) * (state.y) -1;				//get the immediatly next north grid point
+		int northIndex = CommonUtils::getIndex(state.x, state.y+1, map);				//get the immediatly next north grid point
 		if(map->data[northIndex] <= 0)
 		{
 			State north(state.x, state.y+1, map->data[northIndex]);
@@ -27,7 +27,7 @@ std::vector<State> Problem::getSuccessors(State state){
 	}
 	if(state.y < map->info.height - 1)
 	{
-		int southIndex = (state.x+1) * (state.y+2) -1;			//gets the immeditaly next south grid point
+		int southIndex = CommonUtils::getIndex(state.x, state.y-1, map);			//gets the immeditaly next south grid point
 		if(map->data[southIndex] <= 0)
 		{
 			State south(state.x, state.y-1, map->data[southIndex]);
@@ -37,7 +37,7 @@ std::vector<State> Problem::getSuccessors(State state){
 	}
 	if(state.x < map->info.width)
 	{
-		int eastIndex = (state.x+2) * (state.y+1) -1;			//gets the immeditaly next east grid point
+		int eastIndex = CommonUtils::getIndex(state.x+1, state.y, map);			//gets the immeditaly next east grid point
 		if(map->data[eastIndex] <= 0)
 		{
 			State east(state.x+1, state.y, map->data[eastIndex]);
@@ -47,7 +47,7 @@ std::vector<State> Problem::getSuccessors(State state){
 	}
 	if(state.x > 0)
 	{
-		int westIndex = (state.x) * (state.y+1) - 1;				//gets the immeditaly next west grid point
+		int westIndex = CommonUtils::getIndex(state.x-1, state.y, map);				//gets the immeditaly next west grid point
 		if(map->data[westIndex] <= 0)
 		{
 			State west(state.x-1, state.y, map->data[westIndex]);
@@ -86,22 +86,24 @@ std::vector<State> Problem::search(State startState){
 	{
 		State state = frontier.top();
 		frontier.pop();
-		std::cout << "Processing state at (" << state.x << ", " << state.y << ") Prio: " << state.priority << " Vaule: " << state.value << " Path Size: " << state.path.size() << std::endl;
+		std::cout << "Frontier Size: " << frontier.size() << std::endl;
+		std::cout << "Closed Size: " << closedList.size() << std::endl;
 
 		if(this->isGoalState(state))
 		{
 			std::cout << "Found Path " << state.path.size() << std::endl;
 			return state.path;
 		}else if(closedList.find(state) == closedList.end()){
-			std::cout << "State not in closed list" << std::endl;
+			std::cout << "Processing state at (" << state.x << ", " << state.y << ") Prio: " << state.priority << " Vaule: " << state.value << " Path Size: " << state.path.size() << std::endl;
+			//std::cout << "State not in closed list" << std::endl;
 			closedList.insert(state); 
 			std::vector<State> successors = this->getSuccessors(state);
-			std::cout << "Got successors " << successors.size() << std::endl;
+			//std::cout << "Got successors " << successors.size() << std::endl;
 			for(int i = 0; i < successors.size(); i++)
 			{
 				State successor = successors[i];
 				successor.priority = successor.cost + this->heuristic(successor);
-				std::cout << "Successor: (" << successor.x << ", " << successor.y << ") Prio: " << successor.priority << " Path Size: " << successor.path.size() << std::endl;
+				//std::cout << "Successor: (" << successor.x << ", " << successor.y << ") Prio: " << successor.priority << " Path Size: " << successor.path.size() << std::endl;
 				successor.path = state.path;
 				successor.path.push_back(state);
 				frontier.push(successor);

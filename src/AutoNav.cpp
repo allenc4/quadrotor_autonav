@@ -1,4 +1,5 @@
 #include "AutoNav.h"
+#include "CommonUtils.h"
 
 nav_msgs::OccupancyGrid::ConstPtr map;
 sensor_msgs::Range::ConstPtr height;
@@ -78,25 +79,6 @@ void AutoNav::sendMessage(float linX, float linY, float linZ, float angX, float 
 	cmd_vel_pub.publish(cmd);
 }
 
-int AutoNav::getGridXPoint(float point)
-{
-	return (int)((point - map->info.origin.position.x) / map->info.resolution);
-}
-
-int AutoNav::getGridYPoint(float point)
-{
-	return (int)((point - map->info.origin.position.x) / map->info.resolution);
-}
-
-int AutoNav::getTransformXPoint(int gridPoint)
-{
-	return (float)((gridPoint * map->info.resolution) + map->info.origin.position.x);
-}
-
-int AutoNav::getTransformYPoint(int gridPoint)
-{
-	return (float)((gridPoint * map->info.resolution) + map->info.origin.position.y);
-}
 
 void AutoNav::doNav(){
 
@@ -114,20 +96,17 @@ void AutoNav::doNav(){
 		ax = ay = az = 0;
 
 		try{
+			visualization_msgs::Marker points = this->createPoints(1,1,0,0);
 			//gets the current transform from the map to the base_link
 			listener.lookupTransform("/map", "/base_link", ros::Time(0), transform);
 			//gets us our current x,y coordinate in the occupancy grid
-			gridx = this->getGridPoint(transform.getOrigin().x());
-			gridy = this->getGridPoint(transform.getOrigin().y());
+			float oy = transform.getOrigin().y();
+			float ox = transform.getOrigin().x();
+			gridx = CommonUtils::getGridXPoint(ox, map);
+			gridy = CommonUtils::getGridYPoint(oy, map);
 			
-			visualization_msgs::Marker points = this->createPoints(1,1,0,0);
-			this->addPoint(transform.getOrigin().x(), transform.getOrigin().y(), 0, points);
-			this->publishPoints(points);
-
-			//converts current x,y to single index
-			currentIndex = (gridx+10) * (gridy+1) - 1;
-
-			std::cout << "Attempting search..." << std::endl;
+			currentIndex = CommonUtils::getIndex(gridx,gridy, map);
+	 		std::cout << "Attempting search..." << std::endl;
 			Problem p(map);
 			State startState(gridx, gridy, map->data[currentIndex]);
 			std::vector<State> path = p.search(startState);
@@ -136,7 +115,17 @@ void AutoNav::doNav(){
 			for(std::vector<State>::iterator i = path.begin(); i != path.end(); ++i)
 			{
 				std::cout << "(" << i->x << ", " << i->y << ")" << std::endl;
+				this->addPoint(i->x, i->y, 0, points);
 			}
+
+			
+			
+			this->publishPoints(points);
+
+			//converts current x,y to single index
+			
+
+			
 
 			sendMessage(lx,ly,lz,ax,ay,az);
 		}catch(tf::TransformException &ex)

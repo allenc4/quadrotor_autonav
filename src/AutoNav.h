@@ -35,10 +35,6 @@ public:
 	void addPoint(float x, float y, float z, visualization_msgs::Marker &points);
 	visualization_msgs::Marker createPoints(float a, float r, float g, float b);
 	void publishPoints(visualization_msgs::Marker &points);
-	int getGridXPoint(float point);
-	int getGridYPoint(float point);
-	int getTransformXPoint(int gridPoint);
-	int getTransformYPoint(int gridPoint);
 private:
 	//ROS Main Handler
 	ros::NodeHandle nh;
