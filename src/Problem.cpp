@@ -74,18 +74,9 @@ bool Problem::checkStateForObstacle(State state){
 	return false;
 }
 
-
-//NOTE This may be act weird for the following reasons:
-// A set uses the < operator when inserting (I dont really get this as why doesn't it use the =)
-//The Priority queue also uses the < operator to do its push.  The set needs to be by location the 
-//priority queue is by cost+heuristic so it may act weird. 
-
-//Second reason is im storing the path in the state object
-//this may cause i problem where the objects are different in the set
-//and therefore are never in the closedList
 std::vector<State> Problem::search(State startState){
 
-	std::set<State, SetCompare> closedList;
+	std::set<State, SetCompare> closedList;  //used the SetCompare to compare the x,y 
 	std::priority_queue<State> frontier;
 
 	frontier.push(startState);
