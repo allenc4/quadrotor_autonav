@@ -18,8 +18,7 @@ AutoNav::AutoNav(ros::NodeHandle &n)
 {
 	nh = n;
 	cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("/cmd_vel", 1);
-	marker_pub = nh.advertise<visualization_msgs::Marker>("/visualization_marker", 1);
-
+	debug = new Debugger(nh);
 	map_sub = nh.subscribe("/map", 1, mapCallback); //topic, queuesize, callback
 	sonar_sub = nh.subscribe("/sonar_height", 1, sonarCallback);
 }
@@ -27,43 +26,6 @@ AutoNav::AutoNav(ros::NodeHandle &n)
 void AutoNav::moveTo(float x, float y, float z)
 {
 	
-}
-
-visualization_msgs::Marker AutoNav::createPoints(float a, float r, float g, float b){
-	visualization_msgs::Marker points;
-	points.header.frame_id = "/world";
-	points.header.stamp = ros::Time::now();
-	points.ns = "/quadcopter_points";
-	points.action = visualization_msgs::Marker::ADD;
-	points.pose.orientation.w = 1.0;
-
-	points.id = 1;
-
-	points.type = visualization_msgs::Marker::POINTS;
-	points.scale.x = 0.05;
-	points.scale.y = 0.05;
-	points.scale.z = 0.05;
-
-	points.color.a = a;
-	points.color.r = r;
-	points.color.g = g;
-	points.color.b = b;
-
-	return points;
-}
-
-void AutoNav::addPoint(float x, float y, float z, visualization_msgs::Marker &points){
-	geometry_msgs::Point p;
-	p.x = x;
-	p.y = y;
-	p.z = z;
-
-	points.points.push_back(p);
-}
-
-void AutoNav::publishPoints(visualization_msgs::Marker &points)
-{
-	marker_pub.publish(points);
 }
 
 void AutoNav::sendMessage(float linX, float linY, float linZ, float angX, float angY, float angZ)
@@ -87,7 +49,6 @@ void AutoNav::doNav(){
 
 	int gridx, gridy;
 	int currentIndex;
-	visualization_msgs::Marker points = this->createPoints(1,1,0,0);
 	while(nh.ok())
 	{
 		ros::spinOnce(); // needed to get subscribed messages
@@ -96,7 +57,6 @@ void AutoNav::doNav(){
 		ax = ay = az = 0;
 
 		try{
-			visualization_msgs::Marker points = this->createPoints(1,1,0,0);
 			//gets the current transform from the map to the base_link
 			listener.lookupTransform("/map", "/base_link", ros::Time(0), transform);
 			//gets us our current x,y coordinate in the occupancy grid
@@ -107,7 +67,7 @@ void AutoNav::doNav(){
 			
 			currentIndex = CommonUtils::getIndex(gridx,gridy, map);
 	 		std::cout << "Attempting search..." << std::endl;
-			Problem p(map);
+			Problem p(nh, map);
 			State startState(gridx, gridy, map->data[currentIndex]);
 			std::vector<State> path = p.search(startState);
 			std::cout << "Search finished with " << path.size() << " points." << std::endl;
@@ -115,12 +75,12 @@ void AutoNav::doNav(){
 			for(std::vector<State>::iterator i = path.begin(); i != path.end(); ++i)
 			{
 				std::cout << "(" << i->x << ", " << i->y << ")" << std::endl;
-				this->addPoint(i->x, i->y, 0, points);
+				debug->addPoint(i->x, i->y, 0);
 			}
 
 			
 			
-			this->publishPoints(points);
+			debug->publishPoints();
 
 			//converts current x,y to single index
 			

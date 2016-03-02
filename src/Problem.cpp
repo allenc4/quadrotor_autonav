@@ -1,11 +1,13 @@
 #include "Problem.h"
 
-Problem::Problem(nav_msgs::OccupancyGrid::ConstPtr map){
+Problem::Problem(ros::NodeHandle &nh, nav_msgs::OccupancyGrid::ConstPtr map){
+	this->debug = new Debugger(nh, 0,1,0);
+	this->debug2 = new Debugger(nh, 0,0,1);
 	this->map = map;
 }
 
 Problem::~Problem(){
-
+	delete debug;
 }
 
 bool Problem::isGoalState(State state){
@@ -82,33 +84,43 @@ std::vector<State> Problem::search(State startState){
 
 	frontier.push(startState);
 
+	debug->removePoints();
+
 	while(!frontier.empty())
 	{
 		State state = frontier.top();
 		frontier.pop();
-		std::cout << "Frontier Size: " << frontier.size() << std::endl;
-		std::cout << "Closed Size: " << closedList.size() << std::endl;
+		std::cout << "Processing state at (" << state.x << ", " << state.y << ") Priority: " << state.priority << " Value: " << state.value << " Path Size: " << state.path.size();
+		
 
 		if(this->isGoalState(state))
 		{
+			debug2->removePoints();
+			debug2->addPoint(CommonUtils::getTransformXPoint(state.x, map), CommonUtils::getTransformYPoint(state.y, map), 0);
+			debug2->publishPoints();
 			std::cout << "Found Path " << state.path.size() << std::endl;
 			return state.path;
 		}else if(closedList.find(state) == closedList.end()){
-			std::cout << "Processing state at (" << state.x << ", " << state.y << ") Prio: " << state.priority << " Vaule: " << state.value << " Path Size: " << state.path.size() << std::endl;
-			//std::cout << "State not in closed list" << std::endl;
+			std::cout << " OPEN" << std::endl;
 			closedList.insert(state); 
 			std::vector<State> successors = this->getSuccessors(state);
-			//std::cout << "Got successors " << successors.size() << std::endl;
 			for(int i = 0; i < successors.size(); i++)
 			{
+				debug->addPoint(CommonUtils::getTransformXPoint(state.x, map), CommonUtils::getTransformYPoint(state.y, map), 0);
 				State successor = successors[i];
 				successor.priority = successor.cost + this->heuristic(successor);
-				//std::cout << "Successor: (" << successor.x << ", " << successor.y << ") Prio: " << successor.priority << " Path Size: " << successor.path.size() << std::endl;
+				std::cout << "\tSuccessor: (" << successor.x << ", " << successor.y << ") Priority: " << successor.priority << " Path Size: " << successor.path.size() << std::endl;
 				successor.path = state.path;
 				successor.path.push_back(state);
 				frontier.push(successor);
+				debug->addPoint(CommonUtils::getTransformXPoint(successor.x, map), CommonUtils::getTransformYPoint(successor.y, map), 0);
 			}
+		}else
+		{
+			std::cout << " CLOSED" << std::endl;
 		}
+		debug->publishPoints();
+
 	}
 	std::vector<State> path;
 	return path;//no path 

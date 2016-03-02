@@ -2,6 +2,7 @@
 #define _STATE_
 
 #include <vector>
+#include <iostream>
 
 class State{
 public:

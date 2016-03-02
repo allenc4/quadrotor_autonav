@@ -12,13 +12,13 @@ int CommonUtils::getGridYPoint(float point, nav_msgs::OccupancyGrid::ConstPtr ma
 }
 
 
-int CommonUtils::getTransformXPoint(int gridPoint, nav_msgs::OccupancyGrid::ConstPtr map)
+float CommonUtils::getTransformXPoint(int gridPoint, nav_msgs::OccupancyGrid::ConstPtr map)
 {
 	return (float)((gridPoint * map->info.resolution) + map->info.origin.position.x);
 }
 
 
-int CommonUtils::getTransformYPoint(int gridPoint, nav_msgs::OccupancyGrid::ConstPtr map)
+float CommonUtils::getTransformYPoint(int gridPoint, nav_msgs::OccupancyGrid::ConstPtr map)
 {
 	return (float)((gridPoint * map->info.resolution) + map->info.origin.position.y);
 }
