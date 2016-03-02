@@ -104,7 +104,7 @@ void AutoNav::doNav(){
 	float ax = 0.0f, ay = 0.0f, az = 0.0f;
 
 	int gridx, gridy;
-	int currentIndex, north, south, east, west;
+	int currentIndex;
 	visualization_msgs::Marker points = this->createPoints(1,1,0,0);
 	while(nh.ok())
 	{
@@ -112,8 +112,6 @@ void AutoNav::doNav(){
 
 		lx = ly = lz = 0;
 		ax = ay = az = 0;
-		north = south = west = east = -1;
-
 
 		try{
 			//gets the current transform from the map to the base_link
@@ -135,14 +133,10 @@ void AutoNav::doNav(){
 			std::vector<State> path = p.search(startState);
 			std::cout << "Search finished with " << path.size() << " points." << std::endl;
 
-			for(std::vector<State>::iterator i; i != path.end(); ++i)
+			for(std::vector<State>::iterator i = path.begin(); i != path.end(); ++i)
 			{
 				std::cout << "(" << i->x << ", " << i->y << ")" << std::endl;
 			}
-
-			//print all the shits
-			//std::cout << "(" << transform.getOrigin().x() << ", " << transform.getOrigin().y() << ", " << transform.getOrigin().z() << ") (" 
-			//<< gridx << ", " << gridy << ") (" << currentIndex  << ", " << north << ", " << south << ", " << east << ", " << west << ")" << std::endl;
 
 			sendMessage(lx,ly,lz,ax,ay,az);
 		}catch(tf::TransformException &ex)
