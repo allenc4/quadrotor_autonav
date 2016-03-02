@@ -99,7 +99,9 @@ void AutoNav::doNav(){
 				ax = 0.5;
 			}else
 			{
-				lx = 0.5;
+				ly = -0.5;
+				// Get a list of obstacles around the UAV
+				getSurroundingPoints(gridx, gridy, 15);
 			}
 
 			sendMessage(lx,ly,lz,ax,ay,az);
@@ -107,6 +109,22 @@ void AutoNav::doNav(){
 		{
 			ROS_ERROR("%s", ex.what());
 			continue;
+		}
+	}
+}
+
+// Gets a list of occupancy grid indexes where there is an obstacle
+// within a square around the UAV (boundary length determined by threshold)
+void AutoNav::getSurroundingPoints(int centerX, int centerY, int threshold) {
+	std::vector<int> occupiedIndexies;
+
+	for (int i = centerX - threshold; i <= centerX + threshold; i++) {
+		for (int j = centerY - threshold; j <= centerY + threshold; j++) {
+			// Convert x and y into single index for occupancy grid
+			int curIndex = (i * map->info.width) + j;
+			if (map->data[curIndex] == POSITIVE_OBJECT_OCCUPIED) {
+				occupiedIndexies.push_back(index);
+			}
 		}
 	}
 }
