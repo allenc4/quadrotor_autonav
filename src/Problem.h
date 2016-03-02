@@ -4,6 +4,7 @@
 #include <vector>
 #include <set>
 #include <queue>
+#include <string>
 #include "State.h"
 #include <nav_msgs/OccupancyGrid.h>
 #include "CommonUtils.h"

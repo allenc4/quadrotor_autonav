@@ -18,7 +18,7 @@ AutoNav::AutoNav(ros::NodeHandle &n)
 {
 	nh = n;
 	cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("/cmd_vel", 1);
-	debug = new Debugger(nh);
+	debug = new Debugger(nh, "AutoNav");
 	map_sub = nh.subscribe("/map", 1, mapCallback); //topic, queuesize, callback
 	sonar_sub = nh.subscribe("/sonar_height", 1, sonarCallback);
 }
@@ -75,17 +75,12 @@ void AutoNav::doNav(){
 			for(std::vector<State>::iterator i = path.begin(); i != path.end(); ++i)
 			{
 				std::cout << "(" << i->x << ", " << i->y << ")" << std::endl;
-				debug->addPoint(i->x, i->y, 0);
+				debug->addPoint(CommonUtils::getTransformXPoint(i->x, map), CommonUtils::getTransformYPoint(i->y, map), 0);
 			}
 
 			
 			
-			debug->publishPoints();
-
-			//converts current x,y to single index
-			
-
-			
+			debug->publishPoints();		
 
 			sendMessage(lx,ly,lz,ax,ay,az);
 		}catch(tf::TransformException &ex)

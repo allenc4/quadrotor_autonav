@@ -1,8 +1,14 @@
 #include "Problem.h"
 
+struct SetCompare{
+	bool operator() (const State& lhs, const State& rhs) const{
+        return ((lhs.x != rhs.x) || (lhs.y != rhs.y));
+    }
+};
+
 Problem::Problem(ros::NodeHandle &nh, nav_msgs::OccupancyGrid::ConstPtr map){
-	this->debug = new Debugger(nh, 0,1,0);
-	this->debug2 = new Debugger(nh, 0,0,1);
+	this->debug = new Debugger(nh, "States_Expanded", 0,1,0);
+	this->debug2 = new Debugger(nh, "Goal_State", 0,0,1);
 	this->map = map;
 }
 
@@ -79,7 +85,7 @@ bool Problem::checkStateForObstacle(State state){
 //and therefore are never in the closedList
 std::vector<State> Problem::search(State startState){
 
-	std::set<State> closedList;
+	std::set<State, SetCompare> closedList;
 	std::priority_queue<State> frontier;
 
 	frontier.push(startState);
@@ -88,11 +94,16 @@ std::vector<State> Problem::search(State startState){
 
 	while(!frontier.empty())
 	{
-		State state = frontier.top();
-		frontier.pop();
-		std::cout << "Processing state at (" << state.x << ", " << state.y << ") Priority: " << state.priority << " Value: " << state.value << " Path Size: " << state.path.size();
-		
+		State state = frontier.top(); //views top node
+		frontier.pop(); //removes top node
 
+		for(std::set<State>::iterator i = closedList.begin(); i != closedList.end(); ++i)
+		{
+			std::cout << " (" << i->x << ", " << i->y << ", " << i->priority << "),";
+		}
+		std::cout << std::endl;
+
+		std::cout << "Processing state at (" << state.x << ", " << state.y << ") Priority: " << state.priority << " Value: " << state.value << " Path Size: " << state.path.size();
 		if(this->isGoalState(state))
 		{
 			debug2->removePoints();

@@ -1,23 +1,25 @@
 #include "Debugger.h"
 
-Debugger::Debugger(ros::NodeHandle &n){
+int debugId = 0;
+
+Debugger::Debugger(ros::NodeHandle &n, std::string ns){
 	this->marker_pub = n.advertise<visualization_msgs::Marker>("/visualization_marker", 1);
-	this->init(1,0,0);
+	this->init(1,0,0, ns);
 }
 
-Debugger::Debugger(ros::NodeHandle &n, float r, float g, float b){
+Debugger::Debugger(ros::NodeHandle &n, std::string ns, float r, float g, float b){
 	this->marker_pub = n.advertise<visualization_msgs::Marker>("/visualization_marker", 1);
-	this->init(r,g,b);
+	this->init(r,g,b, ns);
 }
 
-void Debugger::init(float r, float g, float b){
+void Debugger::init(float r, float g, float b, std::string ns){
 	points.header.frame_id = "/world";
 	points.header.stamp = ros::Time::now();
-	points.ns = "/quadcopter_points";
+	points.ns = "/quadcopter_points_"+ns;
 	points.action = visualization_msgs::Marker::ADD;
 	points.pose.orientation.w = 1.0;
 
-	points.id = 1;
+	points.id = debugId;//++;
 
 	points.type = visualization_msgs::Marker::POINTS;
 	points.scale.x = 0.05;
