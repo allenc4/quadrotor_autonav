@@ -5,4 +5,9 @@ State::State(int x, int y, float value){
 	this->y = y;
 	this->value = value;
 	priority = 0;
+	parent = NULL;
+}
+
+State::~State(){
+	//delete parent;
 }

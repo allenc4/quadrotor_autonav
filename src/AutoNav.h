@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <iostream>
 #include <unistd.h>
+#include <cmath>
 
 //ROS Headers
 #include <ros/ros.h>
@@ -29,7 +30,8 @@ public:
 	AutoNav(ros::NodeHandle &n);
 	void doNav();
 	void land();
-	void moveTo(float x, float y, float z);
+	void moveTo(tf::StampedTransform pose, float x, float y, float & lx, float & ly);
+	void lookAt(tf::StampedTransform pose, float x, float y, float & ax, float & ay);
 	void sendMessage(float linX, float linY, float linZ, float angX, float angY, float angZ);
 private:
 	//ROS Main Handler

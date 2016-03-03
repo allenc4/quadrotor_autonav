@@ -1,6 +1,7 @@
 #ifndef _PROBLEM_
 #define _PROBLEM_
 
+#include <cstddef>
 #include <vector>
 #include <set>
 #include <queue>
