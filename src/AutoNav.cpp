@@ -3,6 +3,7 @@
 
 nav_msgs::OccupancyGrid::ConstPtr map;
 sensor_msgs::Range::ConstPtr height;
+geometry_msgs::PoseStamped::ConstPtr pose;
 
 void mapCallback(const nav_msgs::OccupancyGrid::ConstPtr &msg)
 {
@@ -14,13 +15,20 @@ void sonarCallback(const sensor_msgs::Range::ConstPtr &msg)
 	height = msg;
 }
 
+void poseCallback(const geometry_msgs::PoseStamped::ConstPtr &msg)
+{
+	pose = msg;
+}
+
 AutoNav::AutoNav(ros::NodeHandle &n)
 {
 	nh = n;
 	cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("/cmd_vel", 1);
 	debug = new Debugger(nh, "AutoNav");
-	map_sub = nh.subscribe("/map", 1, mapCallback); //topic, queuesize, callback
+	map_sub = nh.subscribe("/map", 1, mapCallback); //topic, queue size, callback
 	sonar_sub = nh.subscribe("/sonar_height", 1, sonarCallback);
+	pose_sub = nh.subscribe("/slam_out_pose", 1, poseCallback);
+
 }
 
 void AutoNav::moveTo(float x, float y, float z)
@@ -78,28 +86,9 @@ void AutoNav::doNav(){
 				debug->addPoint(CommonUtils::getTransformXPoint(i->x, map), CommonUtils::getTransformYPoint(i->y, map), 0);
 			}
 
-<<<<<<< HEAD
-			//go up until we are one meter off the ground
-			if(transform.getOrigin().z() < 1)
-			{
-				std::cout << "Up" << std::endl;
-				lz = 0.5;
-			}else if(map->data[currentIndex] > 0)
-			{
-				lx = 0;
-				ly = 0;
-				ax = 0.5;
-			}else
-			{
-				ly = -0.5;
-				// Get a list of obstacles around the UAV
-				getSurroundingPoints(gridx, gridy, 15);
-			}
-=======
 			
 			
 			debug->publishPoints();		
->>>>>>> 84b6e0043058d8b37e55546301430f1b5d586588
 
 			sendMessage(lx,ly,lz,ax,ay,az);
 		}catch(tf::TransformException &ex)
@@ -119,8 +108,8 @@ void AutoNav::getSurroundingPoints(int centerX, int centerY, int threshold) {
 		for (int j = centerY - threshold; j <= centerY + threshold; j++) {
 			// Convert x and y into single index for occupancy grid
 			int curIndex = (i * map->info.width) + j;
-			if (map->data[curIndex] == POSITIVE_OBJECT_OCCUPIED) {
-				occupiedIndexies.push_back(index);
+			if (map->data[curIndex] == this->MAP_POSITIVE_OBJECT_OCCUPIED) {
+				occupiedIndexies.push_back(curIndex);
 			}
 		}
 	}

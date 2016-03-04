@@ -12,22 +12,16 @@
 
 //ROS Topic Headers
 #include <geometry_msgs/Twist.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <sensor_msgs/Range.h>
 
 //TF Headers
 #include <tf/transform_listener.h>
-
-<<<<<<< HEAD
-#define MAP_UNEXPLORED = -1
-#define MAP_POSITIVE_OBJECT_OCCUPIED = 100
-#define MAP_POSITIVE_OBJECT_UNOCCUPIED = 0
-=======
 #include "Problem.h"
 #include "State.h"
 #include "Debugger.h"
 #include <vector>
->>>>>>> 84b6e0043058d8b37e55546301430f1b5d586588
 
 class AutoNav{
 
@@ -49,12 +43,18 @@ private:
 	//ROS Subscribers
 	ros::Subscriber map_sub;	//gets the current occupancy grid
 	ros::Subscriber sonar_sub;	//gets the current sonar readings
+	ros::Subscriber pose_sub;	//gets the estimated robot pose (orientation)
 
 	//TF
 	tf::TransformListener listener;	//listens for location updates
 	tf::StampedTransform transform;	//holds our last known location
 
 	Debugger * debug;
+
+	static const int MAP_UNEXPLORED = -1;
+	static const int MAP_POSITIVE_OBJECT_OCCUPIED = 100;
+	static const int MAP_POSITIVE_OBJECT_UNOCCUPIED = 0;
+
 };
 
 #endif
