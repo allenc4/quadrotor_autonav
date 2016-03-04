@@ -3,16 +3,19 @@
 
 #include <vector>
 #include <iostream>
+#include <cstddef>
 
 class State{
 public:
+	State(){};
 	State(int x, int y, float value);
+	~State();
 	int x;
 	int y;
 	float value;
 	float cost;
 	int priority;
-	std::vector<State> path;
+	State * parent;
 	bool operator< (const State& rhs) const {
 		return this->priority > rhs.priority; //have to switch the signs because
 											//priority queue sorts largest to smallest

@@ -31,8 +31,22 @@ AutoNav::AutoNav(ros::NodeHandle &n)
 
 }
 
-void AutoNav::moveTo(float x, float y, float z)
+void AutoNav::moveTo(tf::StampedTransform pose, float x, float y, float & lx, float & ly)
 {
+	
+}
+
+void AutoNav::lookAt(tf::StampedTransform pose, float x, float y, float & ax, float & ay){
+	
+	ax = 0;//we never want to rotate on the x axis :P
+
+	double angle = atan2(y-pose.getOrigin().y(), x-pose.getOrigin().x());
+	if(angle > -5 && angle < 5)
+	{
+		ay = 0;
+	}
+	else if(angle < 0)
+	{}
 	
 }
 
@@ -57,9 +71,13 @@ void AutoNav::doNav(){
 
 	int gridx, gridy;
 	int currentIndex;
+	std::vector<State> path;
+	bool atHeight = false;
 	while(nh.ok())
 	{
 		ros::spinOnce(); // needed to get subscribed messages
+
+		debug->removePoints();
 
 		lx = ly = lz = 0;
 		ax = ay = az = 0;
@@ -70,27 +88,41 @@ void AutoNav::doNav(){
 			//gets us our current x,y coordinate in the occupancy grid
 			float oy = transform.getOrigin().y();
 			float ox = transform.getOrigin().x();
-			gridx = CommonUtils::getGridXPoint(ox, map);
-			gridy = CommonUtils::getGridYPoint(oy, map);
-			
-			currentIndex = CommonUtils::getIndex(gridx,gridy, map);
-	 		std::cout << "Attempting search..." << std::endl;
-			Problem p(nh, map);
-			State startState(gridx, gridy, map->data[currentIndex]);
-			std::vector<State> path = p.search(startState);
-			std::cout << "Search finished with " << path.size() << " points." << std::endl;
 
-			for(std::vector<State>::iterator i = path.begin(); i != path.end(); ++i)
+			if(!atHeight && transform.getOrigin().z() >= 1)
 			{
-				std::cout << "(" << i->x << ", " << i->y << ")" << std::endl;
-				debug->addPoint(CommonUtils::getTransformXPoint(i->x, map), CommonUtils::getTransformYPoint(i->y, map), 0);
+				atHeight = true;
 			}
+			else if(transform.getOrigin().z() < 1)
+			{
+				//start with getting off the ground
+				ax = 0.9;
+				az = 0.9;
+				ay = 0.9;
+				lz = 0.25;
+			}else if(path.size() == 0 && atHeight == true)
+			{
+				gridx = CommonUtils::getGridXPoint(ox, map);
+				gridy = CommonUtils::getGridYPoint(oy, map);
+				
+				currentIndex = CommonUtils::getIndex(gridx,gridy, map);
+				Problem p(nh, map);
+				State startState(gridx, gridy, map->data[currentIndex]);
+				path = p.search(startState);
+				std::cout << "Got Path with size " << path.size() << std::endl;
+			}else if(path.size() > 0)
+			{
+				State s = path.back();
 
-			
-			
+				float nextX = CommonUtils::getTransformXPoint(s.x, map);
+				float nextY = CommonUtils::getTransformXPoint(s.y, map);
+				for(std::vector<State>::iterator i = path.begin(); i != path.end(); ++i)
+				{
+					debug->addPoint(CommonUtils::getTransformXPoint(i->x, map), CommonUtils::getTransformYPoint(i->y, map), 0);
+				}
+			}
 			debug->publishPoints();		
-
-			sendMessage(lx,ly,lz,ax,ay,az);
+			sendMessage(lx, ly, lz, ax, ay, az);
 		}catch(tf::TransformException &ex)
 		{
 			ROS_ERROR("%s", ex.what());

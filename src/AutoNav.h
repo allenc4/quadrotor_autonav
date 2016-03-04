@@ -5,7 +5,11 @@
 #include <cstddef>
 #include <iostream>
 #include <unistd.h>
+<<<<<<< HEAD
 #include <vector>
+=======
+#include <cmath>
+>>>>>>> ead8ca476fe515b1cadded956004b6fd2762c5d7
 
 //ROS Headers
 #include <ros/ros.h>
@@ -30,7 +34,8 @@ public:
 	AutoNav(ros::NodeHandle &n);
 	void doNav();
 	void land();
-	void moveTo(float x, float y, float z);
+	void moveTo(tf::StampedTransform pose, float x, float y, float & lx, float & ly);
+	void lookAt(tf::StampedTransform pose, float x, float y, float & ax, float & ay);
 	void sendMessage(float linX, float linY, float linZ, float angX, float angY, float angZ);
 	void getSurroundingPoints(int centerX, int centerY, int threshold);
 private:
