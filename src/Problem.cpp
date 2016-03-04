@@ -111,11 +111,8 @@ std::vector<State> Problem::search(State startState){
 		//std::cout << "Processing state at (" << state.x << ", " << state.y << ") Priority: " << state.priority << " Value: " << state.value << " Path Size: " << state.path.size();
 		if(this->isGoalState(*state))
 		{
-			debug2->removePoints();
-			debug2->addPoint(CommonUtils::getTransformXPoint(state->x, map), CommonUtils::getTransformYPoint(state->y, map), 0);
-			debug2->publishPoints();
 			//std::cout << "Found Path " << state.path.size() << std::endl;
-
+			debug->publishPoints();
 			std::vector<State> path;
 
 			std::cout << "Found goal (" << state->x << ", " << state->y << ") Parent: " << state->parent << std::endl;
@@ -131,9 +128,6 @@ std::vector<State> Problem::search(State startState){
 
 			return path;
 		}else if(closedList.find(*state) == closedList.end()){
-			debug2->removePoints();
-			debug2->addPoint(CommonUtils::getTransformXPoint(state->x, map), CommonUtils::getTransformYPoint(state->y, map), 0);
-			debug2->publishPoints();
 			closedList.insert(*state); 
 			std::vector<State> successors = this->getSuccessors(*state);
 			for(int i = 0; i < successors.size(); i++)
@@ -146,9 +140,9 @@ std::vector<State> Problem::search(State startState){
 				frontier.push(successor);
 			}
 		}
-		debug->publishPoints();
-
 	}
+
+	debug->publishPoints();
 	
 	std::vector<State> path;
 	return path;//no path 
