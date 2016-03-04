@@ -5,11 +5,8 @@
 #include <cstddef>
 #include <iostream>
 #include <unistd.h>
-<<<<<<< HEAD
 #include <vector>
-=======
 #include <cmath>
->>>>>>> ead8ca476fe515b1cadded956004b6fd2762c5d7
 
 //ROS Headers
 #include <ros/ros.h>

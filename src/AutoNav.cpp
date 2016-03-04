@@ -1,5 +1,15 @@
 #include "AutoNav.h"
 #include "CommonUtils.h"
+#include <sys/time.h>
+
+typedef unsigned long long timestamp_t;
+
+static timestamp_t get_timestamp ()
+{
+  struct timeval now;
+  gettimeofday (&now, NULL);
+  return  now.tv_usec + (timestamp_t)now.tv_sec * 1000000;
+}
 
 nav_msgs::OccupancyGrid::ConstPtr map;
 sensor_msgs::Range::ConstPtr height;
@@ -107,9 +117,13 @@ void AutoNav::doNav(){
 				
 				currentIndex = CommonUtils::getIndex(gridx,gridy, map);
 				Problem p(nh, map);
+				timestamp_t t0 = get_timestamp();
+
 				State startState(gridx, gridy, map->data[currentIndex]);
 				path = p.search(startState);
-				std::cout << "Got Path with size " << path.size() << std::endl;
+
+				timestamp_t t1 = get_timestamp();
+				std::cout << "Got Path with size " << path.size() << " taking " << (t1 - t0) / 1000.0L << " ms" << std::endl;
 			}else if(path.size() > 0)
 			{
 				State s = path.back();
