@@ -12,7 +12,6 @@ struct SetCompare{
 
 Problem::Problem(ros::NodeHandle &nh, nav_msgs::OccupancyGrid::ConstPtr map){
 	this->debug = new Debugger(nh, "States_Expanded", 0,1,0);
-	this->debug2 = new Debugger(nh, "Goal_State", 0,0,1);
 	this->map = map;
 }
 
@@ -101,18 +100,11 @@ std::vector<State> Problem::search(State startState){
 		state->value = s.value;
 		state->priority = s.priority;
 		frontier.pop(); //removes top node
-
-		// for(std::set<State>::iterator i = closedList.begin(); i != closedList.end(); ++i)
-		// {
-		// 	std::cout << " (" << i->x << ", " << i->y << ", " << i->priority << "),";
-		// }
-		// std::cout << std::endl;
-
+	
 		//std::cout << "Processing state at (" << state.x << ", " << state.y << ") Priority: " << state.priority << " Value: " << state.value << " Path Size: " << state.path.size();
 		if(this->isGoalState(*state))
 		{
 			//std::cout << "Found Path " << state.path.size() << std::endl;
-			debug->publishPoints();
 			std::vector<State> path;
 
 			std::cout << "Found goal (" << state->x << ", " << state->y << ") Parent: " << state->parent << std::endl;
@@ -140,9 +132,10 @@ std::vector<State> Problem::search(State startState){
 				frontier.push(successor);
 			}
 		}
+
+		debug->publishPoints();
 	}
 
-	debug->publishPoints();
 	
 	std::vector<State> path;
 	return path;//no path 

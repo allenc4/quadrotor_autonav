@@ -27,7 +27,6 @@ private:
 	std::vector<State> goalStates;
 	nav_msgs::OccupancyGrid::ConstPtr map;
 	Debugger * debug;
-	Debugger * debug2;
 };
 
 
