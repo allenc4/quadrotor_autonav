@@ -30,16 +30,6 @@ void AutoNav::moveTo(tf::StampedTransform pose, float x, float y, float & lx, fl
 
 void AutoNav::lookAt(tf::StampedTransform pose, float x, float y, float & ax, float & ay){
 	
-	ax = 0;//we never want to rotate on the x axis :P
-
-	double angle = atan2(y-pose.getOrigin().y(), x-pose.getOrigin().x());
-	if(angle > -5 && angle < 5)
-	{
-		ay = 0;
-	}
-	else if(angle < 0)
-	{}
-	
 }
 
 void AutoNav::sendMessage(float linX, float linY, float linZ, float angX, float angY, float angZ)
@@ -81,18 +71,27 @@ void AutoNav::doNav(){
 			float oy = transform.getOrigin().y();
 			float ox = transform.getOrigin().x();
 
-			if(!atHeight && transform.getOrigin().z() >= 1)
+			if(transform.getOrigin().z() >= 1.5)
 			{
-				atHeight = true;
+				atHeight = false;
+				lz = 0.25;
+				sendMessage(lx, ly, lz, ax, ay, az);
 			}
-			else if(transform.getOrigin().z() < 1)
+			else if(!atHeight && transform.getOrigin().z() < 1)
 			{
 				//start with getting off the ground
 				ax = 0.9;
 				az = 0.9;
 				ay = 0.9;
 				lz = 0.25;
-			}else if(path.size() == 0 && atHeight == true)
+				sendMessage(lx, ly, lz, ax, ay, az);
+			}
+			else if(!atHeight && transform.getOrigin().z() >= 1)
+			{
+				atHeight = true;
+				sendMessage(lx, ly, lz, ax, ay, az);
+			}
+			else if(path.size() == 0 && atHeight == true)
 			{
 				gridx = CommonUtils::getGridXPoint(ox, map);
 				gridy = CommonUtils::getGridYPoint(oy, map);
@@ -112,9 +111,11 @@ void AutoNav::doNav(){
 				{
 					debug->addPoint(CommonUtils::getTransformXPoint(i->x, map), CommonUtils::getTransformYPoint(i->y, map), 0);
 				}
+
+				lookAt(transform, s.x, s.y, ax, ay);
+				path.clear();
 			}
 			debug->publishPoints();		
-			sendMessage(lx, ly, lz, ax, ay, az);
 		}catch(tf::TransformException &ex)
 		{
 			ROS_ERROR("%s", ex.what());
