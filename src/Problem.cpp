@@ -12,7 +12,7 @@ struct SetCompare{
 
 Problem::Problem(ros::NodeHandle &nh, nav_msgs::OccupancyGrid::ConstPtr map){
 	this->debug = new Debugger(nh, "States_Expanded", 0,1,0);
-	this->debug2 = new Debugger(nh, "Goal_State", 0,0,1);
+	this->debug->turnOff();
 	this->map = map;
 }
 
@@ -30,58 +30,121 @@ std::vector<State> Problem::getSuccessors(State state){
 	int successorOffset = 1;
 	if(state.y > successorOffset)
 	{
-		int northIndex = CommonUtils::getIndex(state.x, state.y+successorOffset, map);				//get the immediatly next north grid point
+		//get the immediatly next north grid point
+		int northIndex = CommonUtils::getIndex(state.x, state.y+successorOffset, map);
 		if(map->data[northIndex] <= 0)
 		{
-			State north(state.x, state.y+1, map->data[northIndex]);
+			State north(state.x, state.y+successorOffset, map->data[northIndex]);
 			north.cost = state.cost+1;
 			successors.push_back(north);
 		}
 	}
 	if(state.y < map->info.height - successorOffset)
 	{
-		int southIndex = CommonUtils::getIndex(state.x, state.y-successorOffset, map);			//gets the immeditaly next south grid point
+		//gets the immeditaly next south grid point
+		int southIndex = CommonUtils::getIndex(state.x, state.y-successorOffset, map);
 		if(map->data[southIndex] <= 0)
 		{
-			State south(state.x, state.y-1, map->data[southIndex]);
+			State south(state.x, state.y-successorOffset, map->data[southIndex]);
 			south.cost = state.cost+1;
 			successors.push_back(south);
 		}
 	}
 	if(state.x < map->info.width - successorOffset)
 	{
-		int eastIndex = CommonUtils::getIndex(state.x+successorOffset, state.y, map);			//gets the immeditaly next east grid point
+		//gets the immeditaly next east grid point
+		int eastIndex = CommonUtils::getIndex(state.x+successorOffset, state.y, map);
 		if(map->data[eastIndex] <= 0)
 		{
-			State east(state.x+1, state.y, map->data[eastIndex]);
-			east.cost = state.cost+1;
+			State east(state.x+successorOffset, state.y, map->data[eastIndex]);
+			east.cost = state.cost+successorOffset;
 			successors.push_back(east);
 		}
 	}
 	if(state.x > successorOffset)
 	{
-		int westIndex = CommonUtils::getIndex(state.x-successorOffset, state.y, map);				//gets the immeditaly next west grid point
+		//gets the immeditaly next west grid point
+		int westIndex = CommonUtils::getIndex(state.x-successorOffset, state.y, map);
 		if(map->data[westIndex] <= 0)
 		{
-			State west(state.x-1, state.y, map->data[westIndex]);
-			west.cost = state.cost+1;
+			State west(state.x-successorOffset, state.y, map->data[westIndex]);
+			west.cost = state.cost+successorOffset;
 			successors.push_back(west);
+		}
+	}
+	if(state.x > successorOffset && state.y > successorOffset)
+	{
+		//gets the immeditaly next north west grid point
+		int northWestIndex = CommonUtils::getIndex(state.x-successorOffset, state.y+successorOffset, map);
+		if(map->data[northWestIndex] <= 0)
+		{
+			State northWest(state.x-successorOffset, state.y+successorOffset, map->data[northWestIndex]);
+			northWest.cost = state.cost+0.4 + successorOffset;
+			successors.push_back(northWest);
+		}
+	}
+	if(state.x > successorOffset && state.y < map->info.height - successorOffset)
+	{
+		//gets the immeditaly next south west grid point
+		int southWestIndex = CommonUtils::getIndex(state.x-successorOffset, state.y-successorOffset, map);
+		if(map->data[southWestIndex] <= 0)
+		{
+			State southWest(state.x-successorOffset, state.y-successorOffset, map->data[southWestIndex]);
+			southWest.cost = state.cost+0.4 + successorOffset;
+			successors.push_back(southWest);
+		}
+	}
+	if(state.x < map->info.width - successorOffset && state.y > successorOffset)
+	{
+		//gets the immeditaly next north east grid point
+		int northEastIndex = CommonUtils::getIndex(state.x+successorOffset, state.y+successorOffset, map);
+		if(map->data[northEastIndex] <= 0)
+		{
+			State northEast(state.x+successorOffset, state.y+successorOffset, map->data[northEastIndex]);
+			northEast.cost = state.cost+0.4 + successorOffset;
+			successors.push_back(northEast);
+		}
+	}
+	if(state.x < map->info.width - successorOffset && state.y < map->info.height - successorOffset)
+	{
+		//gets the immeditaly next south east grid point
+		int southEastIndex = CommonUtils::getIndex(state.x+successorOffset, state.y-successorOffset, map);
+		if(map->data[southEastIndex] <= 0)
+		{
+			State southEast(state.x+successorOffset, state.y-successorOffset, map->data[southEastIndex]);
+			southEast.cost = state.cost+0.4 + successorOffset;
+			successors.push_back(southEast);
 		}
 	}
 	return successors;
 }
 
 int Problem::heuristic(State state){
+	if(this->checkStateForObstacle(state))
+	{
+		return 1000000;
+	}
 	return 0; //trivial heuristic
 }
 
 bool Problem::checkStateForObstacle(State state){
+	int threshold = 8;
+	for(int y = -8; y < 8; y++)
+	{
+		for(int x = -8; x < 8; x++)
+		{
+			if(this->map->data[CommonUtils::getIndex(state.x+x, state.y+y, this->map)] > 0)
+			{
+				return true;
+			}
+		}
+	}
 	return false;
 }
 
 std::vector<State> Problem::search(State startState){
 
-	std::cout << "Attempting search..." << std::endl;
+//	std::cout << "Attempting search..." << std::endl;
 	std::set<State, SetCompare> closedList;  //used the SetCompare to compare the x,y 
 
 	std::priority_queue<State> frontier;
@@ -101,27 +164,20 @@ std::vector<State> Problem::search(State startState){
 		state->value = s.value;
 		state->priority = s.priority;
 		frontier.pop(); //removes top node
-
-		// for(std::set<State>::iterator i = closedList.begin(); i != closedList.end(); ++i)
-		// {
-		// 	std::cout << " (" << i->x << ", " << i->y << ", " << i->priority << "),";
-		// }
-		// std::cout << std::endl;
-
+	
 		//std::cout << "Processing state at (" << state.x << ", " << state.y << ") Priority: " << state.priority << " Value: " << state.value << " Path Size: " << state.path.size();
 		if(this->isGoalState(*state))
 		{
 			//std::cout << "Found Path " << state.path.size() << std::endl;
-			debug->publishPoints();
 			std::vector<State> path;
 
-			std::cout << "Found goal (" << state->x << ", " << state->y << ") Parent: " << state->parent << std::endl;
+//			std::cout << "Found goal (" << state->x << ", " << state->y << ") Parent: " << state->parent << std::endl;
 
 			State * temp = state;
 
 			while(temp->parent != NULL)
 			{
-				std::cout << "Adding (" << temp->x << ", " << temp->y << ") to path. Parent: " << temp->parent << " Current: " << &temp << std::endl;
+//				std::cout << "Adding (" << temp->x << ", " << temp->y << ") to path. COST: " << temp->priority << std::endl;
 				path.push_back(*temp);
 				temp = temp->parent;
 			}
@@ -140,9 +196,10 @@ std::vector<State> Problem::search(State startState){
 				frontier.push(successor);
 			}
 		}
+
+		debug->publishPoints();
 	}
 
-	debug->publishPoints();
 	
 	std::vector<State> path;
 	return path;//no path 

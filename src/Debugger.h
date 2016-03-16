@@ -12,10 +12,13 @@ public:
 	void addPoint(float x, float y, float z);
 	void publishPoints();
 	void removePoints();
+	void turnOff();
+	void turnOn();
 private:
 	void init(float r, float g, float b, std::string ns);
 	visualization_msgs::Marker points;
 	ros::Publisher marker_pub;
+	bool on;
 };
 
 #endif

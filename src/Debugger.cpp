@@ -13,6 +13,9 @@ Debugger::Debugger(ros::NodeHandle &n, std::string ns, float r, float g, float b
 }
 
 void Debugger::init(float r, float g, float b, std::string ns){
+
+	on = true;
+
 	points.header.frame_id = "/world";
 	points.header.stamp = ros::Time::now();
 	points.ns = "/quadcopter_points_"+ns;
@@ -38,19 +41,34 @@ void Debugger::init(float r, float g, float b, std::string ns){
 }
 
 void Debugger::addPoint(float x, float y, float z){
-	geometry_msgs::Point p;
-	p.x = x;
-	p.y = y;
-	p.z = z;
+	if(this->on){
+		geometry_msgs::Point p;
+		p.x = x;
+		p.y = y;
+		p.z = z;
 
-	points.points.push_back(p);
+		points.points.push_back(p);
+	}
 }
 
 void Debugger::publishPoints()
 {
-	marker_pub.publish(points);
+	if(this->on){
+		marker_pub.publish(points);
+	}
 }
 
 void Debugger::removePoints(){
-	points.points.clear();
+	if(this->on)
+	{
+		points.points.clear();
+	}
+}
+
+void Debugger::turnOn(){
+	this->on = true;
+}
+
+void Debugger::turnOff(){
+	this->on = false;
 }
