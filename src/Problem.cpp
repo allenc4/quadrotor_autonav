@@ -12,7 +12,7 @@ struct SetCompare{
 
 Problem::Problem(ros::NodeHandle &nh, nav_msgs::OccupancyGrid::ConstPtr map){
 	this->debug = new Debugger(nh, "States_Expanded", 0,1,0);
-	this->debug->turnOff();
+	//this->debug->turnOff();
 	this->map = map;
 }
 
@@ -27,7 +27,7 @@ bool Problem::isGoalState(State state){
 //currently only did N,S,E,W can do NE,NW,SE,SW after
 std::vector<State> Problem::getSuccessors(State state){
 	std::vector<State> successors;
-	int successorOffset = 1;
+	int successorOffset = 8;
 	if(state.y > successorOffset)
 	{
 		//get the immediatly next north grid point
@@ -120,14 +120,12 @@ std::vector<State> Problem::getSuccessors(State state){
 }
 
 int Problem::heuristic(State state){
-	if(this->checkStateForObstacle(state))
-	{
-		return 1000000;
-	}
-	return 0; //trivial heuristic
+	int score = 0;
+	score += this->checkStateForObstacle(state);
+	return score;
 }
 
-bool Problem::checkStateForObstacle(State state){
+int Problem::checkStateForObstacle(State state){
 	int threshold = 8;
 	for(int y = -8; y < 8; y++)
 	{
@@ -135,11 +133,11 @@ bool Problem::checkStateForObstacle(State state){
 		{
 			if(this->map->data[CommonUtils::getIndex(state.x+x, state.y+y, this->map)] > 0)
 			{
-				return true;
+				return 1000000;
 			}
 		}
 	}
-	return false;
+	return 0;
 }
 
 std::vector<State> Problem::search(State startState){

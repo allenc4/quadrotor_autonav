@@ -22,7 +22,7 @@ public:
 	std::vector<State> getSuccessors(State state);
 	int heuristic(State state);
 	std::vector<State> search(State state);
-	bool checkStateForObstacle(State state);
+	int checkStateForObstacle(State state);
 private:
 	std::vector<State> goalStates;
 	nav_msgs::OccupancyGrid::ConstPtr map;
