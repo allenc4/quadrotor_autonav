@@ -35,29 +35,120 @@ AutoNav::AutoNav(ros::NodeHandle &n)
 	nh = n;
 	cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("/cmd_vel", 1);
 	debug = new Debugger(nh, "AutoNav");
+	lookatDebug = new Debugger(nh, "lookat");
 	map_sub = nh.subscribe("/map", 1, mapCallback); //topic, queue size, callback
 	sonar_sub = nh.subscribe("/sonar_height", 1, sonarCallback);
 	pose_sub = nh.subscribe("/slam_out_pose", 1, poseCallback);
-
 }
 
-void AutoNav::moveTo(tf::StampedTransform pose, float x, float y, float & lx, float & ly)
+//void AutoNav::moveTo(tf::StampedTransform pose, float x, float y, float & lx, float & ly)
+void AutoNav::moveTo(float x, float y, float & lx, float & ly)
 {
 	
 }
 
-void AutoNav::lookAt(tf::StampedTransform pose, float x, float y, float & ax, float & ay){
-	
-	ax = 0;//we never want to rotate on the x axis :P
+//void AutoNav::lookAt(tf::StampedTransform pose, float x, float y, float & ax, float & ay)
+void AutoNav::lookAt(int x, int y, float &az, bool initialTurn, double &angle)
+{
+//	if (initialTurn)
+//	{
+	int curX = CommonUtils::getGridXPoint(transform.getOrigin().x(), map);
+	int curY = CommonUtils::getGridXPoint(transform.getOrigin().y(), map);
 
-	double angle = atan2(y-pose.getOrigin().y(), x-pose.getOrigin().x());
-	if(angle > -5 && angle < 5)
-	{
-		ay = 0;
+	// Normalizes the angle to be between 0 circle to + 2 * M_PI circle. Returns in radians.
+	angle = angles::normalize_angle_positive(PI + tf::getYaw(transform.getRotation()));
+
+	// Fix the angle
+	double angleDeg = angles::to_degrees(angle);
+	if (angleDeg > 90 && angleDeg < 180) {
+		angleDeg -= 180;
+	} else if (angleDeg >= 180 && angleDeg < 270) {
+		angleDeg -= 180;
+	} else if (angleDeg >= 270) {
+		angleDeg -= 360;
 	}
-	else if(angle < 0)
-	{}
-	
+	// Get a point X units on the current facing line of sight
+	int newX = 25 * cos(angles::from_degrees(angleDeg));
+	int newY = 25 * sin(angles::from_degrees(angleDeg));
+
+	if (angles::to_degrees(angle) > 90 && angles::to_degrees(angle) <= 270) {
+		newX += curX;
+		newY += curY;
+	} else {
+		newX = curX - newX;
+		newY = curY - newY;
+	}
+
+//	std::cout << angles::to_degrees(angles::normalize_angle_positive(PI + tf::getYaw(transform.getRotation()))) << std::endl;
+
+	lookatDebug->addPoint(CommonUtils::getTransformXPoint(newX, map),
+			CommonUtils::getTransformYPoint(newY, map),
+			0);
+	lookatDebug->addPoint(CommonUtils::getTransformXPoint(curX, map),
+				CommonUtils::getTransformYPoint(curY, map),
+				0);
+	lookatDebug->addPoint(CommonUtils::getTransformXPoint(x, map),
+				CommonUtils::getTransformYPoint(y, map),
+				0);
+
+	// Now, we have three points on a triangle to compute the angle. So get the distances
+	double newToCurDist = getDistance(newX, newY, curX, curY);
+	double curToNextDist = getDistance(curX, curY, x, y);
+	double newToNextDist = getDistance(newX, newY, x, y);
+
+	// We need to get the angle opposite from the new coordinate to the next coordinate (newToNextDist),
+	// because that is the angle we are going to be turning to look at the next position.
+
+	// Use the cosine rule since sine will only give us acute angles
+	double newToNextAngle = acos(
+			(pow(newToCurDist, 2) + pow(curToNextDist, 2) - pow(newToNextDist, 2)) / (2 * newToCurDist * curToNextDist)  // Get cos(newToNextDist)
+			);
+
+	//if (newToNextAngle)
+
+//	angle = angles::normalize_angle_positive(angle + newToNextAngle);
+	angle -= newToNextAngle;
+
+//	if (y > curY) {
+//		angle = angles::normalize_angle_positive(angle + atan2(x - curX, y - curY));
+//	} else {
+//		angle = angles::normalize_angle_positive(angle + atan2(y - curY, x - curX) + PI);
+//	}
+//
+//	std::cout << "Quadrotor Angle: " << angles::to_degrees(angles::normalize_angle_positive(PI + tf::getYaw(transform.getRotation()))) << std::endl;
+//	std::cout << "newToNext Angle: " << angles::to_degrees(newToNextAngle) << std::endl;
+
+	std::cout << "Quadrotor Angle: " << angles::to_degrees(angles::normalize_angle_positive(PI + tf::getYaw(transform.getRotation()))) <<
+			"   newToNext: " << angles::to_degrees(newToNextAngle) << "   combined: " << angles::to_degrees(angles::normalize_angle_positive(angle)) << std::endl;
+
+	double angleDif = angles::normalize_angle(tf::getYaw(transform.getRotation()) - angle - PI);
+//	std::cout << "Angle compensation: " << angleDif << std::endl;
+
+//	// ~5 degrees either way so stop moving
+	if(angleDif >= -0.0872665 && angleDif <= 0.0872665)
+	{
+		az = 0;
+	} else if (angleDif <= 0.3 && angleDif > 0)
+	{
+		az = 0.05;
+	} else if (angleDif >= -0.3 && angleDif < 0)
+	{
+		az = -0.05;
+	} else if (angleDif > 0.3)
+	{
+		az = 0.5;
+	} else
+	{
+		az = -0.5;
+	}
+
+//	az = 0.25;
+
+}
+
+double AutoNav::getDistance(int x1, int y1, int x2, int y2)
+{
+	return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
 }
 
 void AutoNav::sendMessage(float linX, float linY, float linZ, float angX, float angY, float angZ)
@@ -83,11 +174,15 @@ void AutoNav::doNav(){
 	int currentIndex;
 	std::vector<State> path;
 	bool atHeight = false;
+	double angle = -999;
+
+
 	while(nh.ok())
 	{
 		ros::spinOnce(); // needed to get subscribed messages
 
 		debug->removePoints();
+		lookatDebug->removePoints();
 
 		lx = ly = lz = 0;
 		ax = ay = az = 0;
@@ -102,15 +197,14 @@ void AutoNav::doNav(){
 			if(!atHeight && transform.getOrigin().z() >= 1)
 			{
 				atHeight = true;
-			}
-			else if(transform.getOrigin().z() < 1)
+			} else if(transform.getOrigin().z() < 1)
 			{
 				//start with getting off the ground
 				ax = 0.9;
 				az = 0.9;
 				ay = 0.9;
 				lz = 0.25;
-			}else if(path.size() == 0 && atHeight == true)
+			} else if(path.size() == 0 && atHeight == true)
 			{
 				gridx = CommonUtils::getGridXPoint(ox, map);
 				gridy = CommonUtils::getGridYPoint(oy, map);
@@ -124,9 +218,17 @@ void AutoNav::doNav(){
 
 				timestamp_t t1 = get_timestamp();
 				std::cout << "Got Path with size " << path.size() << " taking " << (t1 - t0) / 1000.0L << " ms" << std::endl;
-			}else if(path.size() > 0)
+			} else if(path.size() > 0)
 			{
 				State s = path.back();
+				State goal = path.front();
+				if (angle == -999)
+				{
+					lookAt(goal.x, goal.y, az, true, angle);
+				} else
+				{
+					lookAt(goal.x, goal.y, az, false, angle);
+				}
 
 				float nextX = CommonUtils::getTransformXPoint(s.x, map);
 				float nextY = CommonUtils::getTransformXPoint(s.y, map);
@@ -135,7 +237,8 @@ void AutoNav::doNav(){
 					debug->addPoint(CommonUtils::getTransformXPoint(i->x, map), CommonUtils::getTransformYPoint(i->y, map), 0);
 				}
 			}
-			debug->publishPoints();		
+			debug->publishPoints();
+			lookatDebug->publishPoints();
 			sendMessage(lx, ly, lz, ax, ay, az);
 		}catch(tf::TransformException &ex)
 		{

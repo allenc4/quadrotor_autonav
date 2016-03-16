@@ -8,7 +8,7 @@ boost::shared_ptr<AutoNav> an;
 void handleTerm(int sig)
 {
 	std::cout << "SIGNAL: " << sig << " Landing! DO NOT FORCE TERMINATE!!!" << std::endl;
-	an->land();
+	//an->land();
 	exit(1);
 }
 
