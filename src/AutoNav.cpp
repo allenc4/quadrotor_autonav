@@ -56,93 +56,159 @@ void AutoNav::lookAt(int x, int y, float &az)
 	// Normalizes the angle to be between 0 circle to + 2 * M_PI circle. Returns in radians.
 	double angle = angles::normalize_angle_positive(PI + tf::getYaw(transform.getRotation()));
 
+	// Get a point 10 units in the positive direction on the X axis from the current location
+	int baseX = curX - 10;
+	int baseY = curY;
 
-	// Fix the angle
-	double angleDeg = angles::to_degrees(angle);
-	if (angleDeg > 90 && angleDeg < 180) {
-		angleDeg -= 180;
-	} else if (angleDeg >= 180 && angleDeg < 270) {
-		angleDeg -= 180;
-	} else if (angleDeg >= 270) {
-		angleDeg -= 360;
+
+	// Now, we have three points on a triangle to compute the angle. So get the distances
+	double baseToCurDist = getDistance(baseX, baseY, curX, curY);
+	double curToNextDist = getDistance(curX, curY, x, y);
+	double baseToNextDist = getDistance(baseX, baseY, x, y);
+
+	// We need to get the angle opposite from the new coordinate to the next coordinate (baseToNextDist),
+	// because that is the angle we are going to be turning to look at the next position.
+
+	// Use the cosine rule since sine will only give us acute angles
+	double baseToNextAngle = acos(
+			(pow(baseToCurDist, 2) + pow(curToNextDist, 2) - pow(baseToNextDist, 2)) / (2 * baseToCurDist * curToNextDist)  // Get cos(baseToNextDist)
+			);
+
+	double angleDif = angle - baseToNextAngle;
+
+	bool switchDir = false;
+	if (angleDif > PI) {
+		switchDir = true;
 	}
-	// Get a point 25 units on the current facing line of sight
-	int newX = 25 * cos(angles::from_degrees(angleDeg));
-	int newY = 25 * sin(angles::from_degrees(angleDeg));
 
+	std::cout << "Quadrotor Angle: " << angles::to_degrees(angle) <<
+				"   baseToNext: " << angles::to_degrees(baseToNextAngle) <<
+				"   Angle compensation: " << angles::to_degrees(angleDif) << std::endl;
 
-	if (angles::to_degrees(angle) > 90 && angles::to_degrees(angle) <= 270) {
-		newX += curX;
-		newY += curY;
-	} else {
-		newX = curX - newX;
-		newY = curY - newY;
+	// ~5 degrees either way so stop moving
+	if (angleDif >= -0.0872665 && angleDif <= 0.0872665)
+	{
+		az = 0;
+	}
+	else if (angleDif > 0 && angleDif <= 0.44)  // ~ 25 degrees
+	{
+		az = -0.15;
+	}
+	else if (angleDif >= -0.44 && angleDif < 0)
+	{
+		az = 0.15;
+	}
+	else if (angleDif > 0.44)
+	{
+		az = -1.75;
+	}
+	else if (angleDif < -0.44)
+	{
+		az = 1.75;
 	}
 
-//	std::cout << angles::to_degrees(angles::normalize_angle_positive(PI + tf::getYaw(transform.getRotation()))) << std::endl;
+	if (switchDir) {
+		az = -az;
+	}
 
-	lookatDebug->addPoint(CommonUtils::getTransformXPoint(newX, map),
-			CommonUtils::getTransformYPoint(newY, map),
-			0);
+//	az = 0.25;
+
 	lookatDebug->addPoint(CommonUtils::getTransformXPoint(curX, map),
 				CommonUtils::getTransformYPoint(curY, map),
 				0);
 	lookatDebug->addPoint(CommonUtils::getTransformXPoint(x, map),
 				CommonUtils::getTransformYPoint(y, map),
 				0);
-//	lookatDebug->addPoint(CommonUtils::getTransformXPoint(baseX, map),
-//					CommonUtils::getTransformYPoint(baseY, map),
-//					0);
-//
-//	std::cout << baseX << " " << baseY << std::endl;
+	lookatDebug->addPoint(CommonUtils::getTransformXPoint(baseX, map),
+					CommonUtils::getTransformYPoint(baseY, map),
+					0);
+
+//	// Fix the angle
+//	double angleDeg = angles::to_degrees(angle);
+//	if (angleDeg > 90 && angleDeg < 180) {
+//		angleDeg -= 180;
+//	} else if (angleDeg >= 180 && angleDeg < 270) {
+//		angleDeg -= 180;
+//	} else if (angleDeg >= 270) {
+//		angleDeg -= 360;
+//	}
+//	// Get a point 25 units on the current facing line of sight
+//	int newX = 25 * cos(angles::from_degrees(angleDeg));
+//	int newY = 25 * sin(angles::from_degrees(angleDeg));
+
+
+//	if (angles::to_degrees(angle) > 90 && angles::to_degrees(angle) <= 270) {
+//		newX += curX;
+//		newY += curY;
+//	} else {
+//		newX = curX - newX;
+//		newY = curY - newY;
+//	}
+
 
 	// Now, we have three points on a triangle to compute the angle. So get the distances
-	double newToCurDist = getDistance(newX, newY, curX, curY);
-	double curToNextDist = getDistance(curX, curY, x, y);
-	double newToNextDist = getDistance(newX, newY, x, y);
-
-	// We need to get the angle opposite from the new coordinate to the next coordinate (newToNextDist),
-	// because that is the angle we are going to be turning to look at the next position.
-
-	// Use the cosine rule since sine will only give us acute angles
-	double newToNextAngle = acos(
-			(pow(newToCurDist, 2) + pow(curToNextDist, 2) - pow(newToNextDist, 2)) / (2 * newToCurDist * curToNextDist)  // Get cos(newToNextDist)
-			);
-
-	// If the new point is to the left of the next point, we want to move to the right
-	bool movePos = false;
-	if (newY <= y) {
-		movePos = true;
-	}
-
-//	angle = angles::normalize_angle_positive(angle + newToNextAngle);
-	angle -= newToNextAngle;
-
-	std::cout << "Quadrotor Angle: " << angles::to_degrees(angles::normalize_angle_positive(PI + tf::getYaw(transform.getRotation()))) <<
-			"   newToNext: " << angles::to_degrees(newToNextAngle) <<
-			std::endl;
-
-	double angleDif = angles::normalize_angle(tf::getYaw(transform.getRotation()) - angle - PI);
-//	std::cout << "Angle compensation: " << angles::to_degrees(angleDif) << std::endl;
-
-////	// ~5 degrees either way so stop moving
-	if(angleDif <= 0.0872665)
-	{
-		az = 0;
-	}
-	else if (angleDif <= 0.3 && angleDif > 0)
-	{
-		az = 0.05;
-	}
-	else if (angleDif > 0.3)
-	{
-		az = 0.25;
-	}
-
-	if (az != 0 && !movePos) {
-		az = -1 * az;
-	}
+//	double newToCurDist = getDistance(newX, newY, curX, curY);
+//	double curToNextDist = getDistance(curX, curY, x, y);
+//	double newToNextDist = getDistance(newX, newY, x, y);
+//
+//	// We need to get the angle opposite from the new coordinate to the next coordinate (newToNextDist),
+//	// because that is the angle we are going to be turning to look at the next position.
+//
+//	// Use the cosine rule since sine will only give us acute angles
+//	double newToNextAngle = acos(
+//			(pow(newToCurDist, 2) + pow(curToNextDist, 2) - pow(newToNextDist, 2)) / (2 * newToCurDist * curToNextDist)  // Get cos(newToNextDist)
+//			);
+//
+//
+////	angle = angles::normalize_angle_positive(angle + newToNextAngle);
+//	angle -= newToNextAngle;
+//
+//	std::cout << "Quadrotor Angle: " << angles::to_degrees(angles::normalize_angle_positive(PI + tf::getYaw(transform.getRotation()))) <<
+//			"   newToNext: " << angles::to_degrees(newToNextAngle) <<
+//			std::endl;
+//
+//	// Check if we have to change direction
+//	bool switchDir = false;
+//	if (prevAngle == -1) {
+//		prevAngle = newToNextAngle;
+//	} else if (prevAngle != -1 && prevAngle > newToNextAngle) {
+//		switchDir = true;
+//		prevAngle = newToNextAngle;
+//	}
+//
+//	double angleDif = angles::normalize_angle(tf::getYaw(transform.getRotation()) - angle - PI);
+////	std::cout << "Angle compensation: " << angles::to_degrees(angleDif) << std::endl;
+//
+//////	// ~5 degrees either way so stop moving
+//	if(angleDif <= 0.0872665)
+//	{
+//		az = 0;
+//	}
+//	else if (angleDif <= 0.44 && angleDif > 0)
+//	{
+//		if (az >= 0) {
+//			az = 0.05;
+//		} else {
+//			az = -0.05;
+//		}
+//	}
+//	else if (angleDif > 0.44)  // ~25 degrees
+//	{
+//		if (az >= 0) {
+//			az = 0.75;
+//		} else {
+//			az = -0.75;
+//		}
+//	}
+//
+//	if (az != 0 && switchDir) {
+//		az = -1 * az;
+//	}
 //	az = 0.15;
+//
+//	lookatDebug->addPoint(CommonUtils::getTransformXPoint(newX, map),
+//			CommonUtils::getTransformYPoint(newY, map),
+//			0);
 
 
 }
@@ -238,7 +304,7 @@ void AutoNav::doNav(){
 				}
 
 
-				lookAt(path.front().x, path.front().y, az);
+				lookAt(path.front().x, path.front().y, az);  // Look at the goal
 				sendMessage(lx, ly, lz, ax, ay, az);
 //				lookAt(transform, s.x, s.y, ax, ay);
 				path.clear();

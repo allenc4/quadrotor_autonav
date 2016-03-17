@@ -12,7 +12,7 @@ struct SetCompare{
 
 Problem::Problem(ros::NodeHandle &nh, nav_msgs::OccupancyGrid::ConstPtr map){
 	this->debug = new Debugger(nh, "States_Expanded", 0,1,0);
-	//this->debug->turnOff();
+	this->debug->turnOff();
 	this->map = map;
 }
 
@@ -27,7 +27,7 @@ bool Problem::isGoalState(State state){
 //currently only did N,S,E,W can do NE,NW,SE,SW after
 std::vector<State> Problem::getSuccessors(State state){
 	std::vector<State> successors;
-	int successorOffset = 8;
+	int successorOffset = 4;
 	if(state.y > successorOffset)
 	{
 		//get the immediatly next north grid point
