@@ -10,6 +10,7 @@
 #include <nav_msgs/OccupancyGrid.h>
 #include "CommonUtils.h"
 #include "Debugger.h"
+#include <cmath>
 //Class Defines the Basic Search Algorithms 
 //and an extendedable interface for other roblems that will define
 //functions for goal testing, successors, and the heuristic to use

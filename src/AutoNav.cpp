@@ -264,16 +264,11 @@ void AutoNav::doNav(){
 			{
 				atHeight = false;
 				lz = 0.25;
-				sendMessage(lx, ly, lz, ax, ay, az);
 			}
 			else if(!atHeight && transform.getOrigin().z() < 1)
 			{
 				//start with getting off the ground
-				ax = 0.9;
-				az = 0.9;
-				ay = 0.9;
-				lz = 0.25;
-				sendMessage(lx, ly, lz, ax, ay, az);
+				lz = 0.5;
 			}
 			else if(!atHeight && transform.getOrigin().z() >= 1)
 			{
@@ -289,7 +284,7 @@ void AutoNav::doNav(){
 				Problem p(nh, map);
 				State startState(gridx, gridy, map->data[currentIndex]);
 				path = p.search(startState);
-				std::cout << "Got Path with size " << path.size() << std::endl;
+				std::cout << "Got Path with size " << path.size() << " and Cost " << path.front().priority << std::endl;
 			}
 			else if(path.size() > 0)
 			{
@@ -304,13 +299,17 @@ void AutoNav::doNav(){
 				}
 
 
-				lookAt(path.front().x, path.front().y, az);  // Look at the goal
-				sendMessage(lx, ly, lz, ax, ay, az);
-//				lookAt(transform, s.x, s.y, ax, ay);
+				//lookAt(path.front().x, path.front().y, az);  // Look at the goal
+				lookAt(s.x, s.y, az);
+				if(az == 0)
+				{
+					lx = 0.5;
+				}
 				path.clear();
 			}
 			debug->publishPoints();
 			lookatDebug->publishPoints();
+			sendMessage(lx, ly, lz, ax, ay, az);
 		}catch(tf::TransformException &ex)
 		{
 			ROS_ERROR("%s", ex.what());

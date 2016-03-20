@@ -57,7 +57,7 @@ std::vector<State> Problem::getSuccessors(State state){
 		if(map->data[eastIndex] <= 0)
 		{
 			State east(state.x+successorOffset, state.y, map->data[eastIndex]);
-			east.cost = state.cost+successorOffset;
+			east.cost = state.cost+1;
 			successors.push_back(east);
 		}
 	}
@@ -68,7 +68,7 @@ std::vector<State> Problem::getSuccessors(State state){
 		if(map->data[westIndex] <= 0)
 		{
 			State west(state.x-successorOffset, state.y, map->data[westIndex]);
-			west.cost = state.cost+successorOffset;
+			west.cost = state.cost+1;
 			successors.push_back(west);
 		}
 	}
@@ -79,7 +79,7 @@ std::vector<State> Problem::getSuccessors(State state){
 		if(map->data[northWestIndex] <= 0)
 		{
 			State northWest(state.x-successorOffset, state.y+successorOffset, map->data[northWestIndex]);
-			northWest.cost = state.cost+0.4 + successorOffset;
+			northWest.cost = state.cost+0.4 + 1;
 			successors.push_back(northWest);
 		}
 	}
@@ -90,7 +90,7 @@ std::vector<State> Problem::getSuccessors(State state){
 		if(map->data[southWestIndex] <= 0)
 		{
 			State southWest(state.x-successorOffset, state.y-successorOffset, map->data[southWestIndex]);
-			southWest.cost = state.cost+0.4 + successorOffset;
+			southWest.cost = state.cost+0.4 + 1;
 			successors.push_back(southWest);
 		}
 	}
@@ -101,7 +101,7 @@ std::vector<State> Problem::getSuccessors(State state){
 		if(map->data[northEastIndex] <= 0)
 		{
 			State northEast(state.x+successorOffset, state.y+successorOffset, map->data[northEastIndex]);
-			northEast.cost = state.cost+0.4 + successorOffset;
+			northEast.cost = state.cost+0.4 + 1;
 			successors.push_back(northEast);
 		}
 	}
@@ -112,7 +112,7 @@ std::vector<State> Problem::getSuccessors(State state){
 		if(map->data[southEastIndex] <= 0)
 		{
 			State southEast(state.x+successorOffset, state.y-successorOffset, map->data[southEastIndex]);
-			southEast.cost = state.cost+0.4 + successorOffset;
+			southEast.cost = state.cost+0.4 + 1;
 			successors.push_back(southEast);
 		}
 	}
@@ -122,6 +122,7 @@ std::vector<State> Problem::getSuccessors(State state){
 int Problem::heuristic(State state){
 	int score = 0;
 	score += this->checkStateForObstacle(state);
+	std::cout << "SCORE: " << score << std::endl;
 	return score;
 }
 
@@ -133,7 +134,8 @@ int Problem::checkStateForObstacle(State state){
 		{
 			if(this->map->data[CommonUtils::getIndex(state.x+x, state.y+y, this->map)] > 0)
 			{
-				return 1000000;
+
+				return 1000000/(abs(y)+abs(x)+1);
 			}
 		}
 	}
