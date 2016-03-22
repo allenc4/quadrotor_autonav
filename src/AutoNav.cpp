@@ -74,6 +74,10 @@ void AutoNav::lookAt(int x, int y, float &az)
 			(pow(baseToCurDist, 2) + pow(curToNextDist, 2) - pow(baseToNextDist, 2)) / (2 * baseToCurDist * curToNextDist)  // Get cos(baseToNextDist)
 			);
 
+	if (y > baseY) {
+		baseToNextAngle = TWO_PI - baseToNextAngle;
+	}
+
 	double angleDif = angle - baseToNextAngle;
 
 	bool switchDir = false;
@@ -81,9 +85,10 @@ void AutoNav::lookAt(int x, int y, float &az)
 		switchDir = true;
 	}
 
-	std::cout << "Quadrotor Angle: " << angles::to_degrees(angle) <<
-				"   baseToNext: " << angles::to_degrees(baseToNextAngle) <<
-				"   Angle compensation: " << angles::to_degrees(angleDif) << std::endl;
+	std::cout << "Quadrotor Angle: " << (int) angles::to_degrees(angle) <<
+				"   baseToNext: " << (int) angles::to_degrees(baseToNextAngle) <<
+				"   compensation: " << (int) angles::to_degrees(angleDif) <<
+				"   switchDir: " << switchDir << std::endl;
 
 	// ~5 degrees either way so stop moving
 	if (angleDif >= -0.0872665 && angleDif <= 0.0872665)
@@ -284,7 +289,7 @@ void AutoNav::doNav(){
 				Problem p(nh, map);
 				State startState(gridx, gridy, map->data[currentIndex]);
 				path = p.search(startState);
-				std::cout << "Got Path with size " << path.size() << " and Cost " << path.front().priority << std::endl;
+//				std::cout << "Got Path with size " << path.size() << " and Cost " << path.front().priority << std::endl;
 			}
 			else if(path.size() > 0)
 			{

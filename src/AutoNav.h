@@ -64,6 +64,7 @@ private:
 	static const int MAP_POSITIVE_OBJECT_UNOCCUPIED = 0;
 
 	static const double PI = 3.14159265359;
+	static const double TWO_PI = 6.28318530718;
 	static const double PI_2 = 1.57079632679489661923;
 
 };

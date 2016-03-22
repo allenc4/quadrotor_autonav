@@ -122,7 +122,7 @@ std::vector<State> Problem::getSuccessors(State state){
 int Problem::heuristic(State state){
 	int score = 0;
 	score += this->checkStateForObstacle(state);
-	std::cout << "SCORE: " << score << std::endl;
+//	std::cout << "SCORE: " << score << std::endl;
 	return score;
 }
 
