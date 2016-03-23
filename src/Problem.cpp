@@ -126,19 +126,20 @@ int Problem::heuristic(State state){
 }
 
 int Problem::checkStateForObstacle(State state){
-	int threshold = 8;
-	for(int y = -8; y < 8; y++)
+	int threshold = 9;
+	int score = 0;
+	for(int y = -threshold; y < threshold; y++)
 	{
-		for(int x = -8; x < 8; x++)
+		for(int x = -threshold; x < threshold; x++)
 		{
 			if(this->map->data[CommonUtils::getIndex(state.x+x, state.y+y, this->map)] > 0)
 			{
 
-				return 1000000/(abs(y)+abs(x)+1);
+				score += 1000000/(std::max(abs(y), abs(x))+1);
 			}
 		}
 	}
-	return 0;
+	return score;
 }
 
 std::vector<State> Problem::search(State startState){

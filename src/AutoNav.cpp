@@ -246,6 +246,7 @@ void AutoNav::doNav(){
 	int currentIndex;
 	std::vector<State> path;
 	bool atHeight = false;
+	int startPathSize = 0;
 
 	while(nh.ok())
 	{
@@ -278,7 +279,7 @@ void AutoNav::doNav(){
 			else if(!atHeight && transform.getOrigin().z() >= 1)
 			{
 				atHeight = true;
-				sendMessage(lx, ly, lz, ax, ay, az);
+				lz = -0.25;
 			}
 			else if(path.size() == 0 && atHeight == true)
 			{
@@ -289,28 +290,68 @@ void AutoNav::doNav(){
 				Problem p(nh, map);
 				State startState(gridx, gridy, map->data[currentIndex]);
 				path = p.search(startState);
-//				std::cout << "Got Path with size " << path.size() << " and Cost " << path.front().priority << std::endl;
+				std::cout << "Got Path with size " << path.size() << " and Cost " << path.front().priority << std::endl;
+				startPathSize = path.size();
 			}
 			else if(path.size() > 0)
 			{
-				State s = path.back();
+				int averageX = 0;
+				int averageY = 0;
+				int pointsToAverage = 4;
 
-				float nextX = CommonUtils::getTransformXPoint(s.x, map);
-				float nextY = CommonUtils::getTransformYPoint(s.y, map);
+				if(path.size() >= pointsToAverage)
+				{
+					for(int i = path.size()-1; i > path.size()-1-pointsToAverage; i--)
+					{
+						averageX += path.at(i).x;
+						averageY += path.at(i).y;
+					}
+					averageX /= pointsToAverage;
+					averageY /= pointsToAverage;
+				}else
+				{
+					averageX = path.front().x;
+					averageY = path.front().y;
+				}
+
+				float nextX = CommonUtils::getTransformXPoint(averageX, map);
+				float nextY = CommonUtils::getTransformYPoint(averageY, map);
+
+				float thresholdX = abs(averageX - CommonUtils::getGridXPoint(transform.getOrigin().x(), map));
+				float thresholdY = abs(averageY - CommonUtils::getGridYPoint(transform.getOrigin().y(), map));
+
+				//if we get close to the point then remove it from the path
+				if(thresholdX <= 2 && thresholdY <= 2)
+				{
+					std::cout << "Got to point" << std::endl;
+					path.pop_back();
+				}
+
+				//if for some reason re magically become really far away
+				//recalculate the path.  we probably hit a wall or something.
+				if(thresholdX >= 20 || thresholdY >= 20){
+					std::cout << "To Far away" << std::endl;
+					path.clear();
+					lx = 0;
+					az = 0;
+				}else
+				{					
+					//look at the averaged point
+					lookAt(averageX, averageY, az);					
+					lx = 0.5-az;
+					if(lx < 0 || lx > 0.5) lx = 0; //dont go backwards 
+				}
+
+				//if we get half way through the path lets recalculate
+				if(path.size() <= startPathSize/2)
+				{
+					path.clear();
+				}
 
 				for(std::vector<State>::iterator i = path.begin(); i != path.end(); ++i)
 				{
 					debug->addPoint(CommonUtils::getTransformXPoint(i->x, map), CommonUtils::getTransformYPoint(i->y, map), 0);
 				}
-
-
-				//lookAt(path.front().x, path.front().y, az);  // Look at the goal
-				lookAt(s.x, s.y, az);
-				if(az == 0)
-				{
-					lx = 0.5;
-				}
-				path.clear();
 			}
 			debug->publishPoints();
 			lookatDebug->publishPoints();
