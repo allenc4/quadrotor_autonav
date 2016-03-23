@@ -78,17 +78,17 @@ void AutoNav::lookAt(int x, int y, float &az)
 		baseToNextAngle = TWO_PI - baseToNextAngle;
 	}
 
-	double angleDif = angle - baseToNextAngle;
+	double angleDif = angles::normalize_angle(angle - baseToNextAngle);
 
-	bool switchDir = false;
-	if (angleDif > PI) {
-		switchDir = true;
-	}
+//	bool switchDir = false;
+//	if (angleDif > PI || angleDif < -PI) {
+//		angleDif = angles::normalize_angle(baseToNextAngle - angle);
+//	}
 
 	std::cout << "Quadrotor Angle: " << (int) angles::to_degrees(angle) <<
 				"   baseToNext: " << (int) angles::to_degrees(baseToNextAngle) <<
-				"   compensation: " << (int) angles::to_degrees(angleDif) <<
-				"   switchDir: " << switchDir << std::endl;
+				"   compensation: " << (int) angles::to_degrees(angleDif) << std::endl;
+//				"   switchDir: " << switchDir << std::endl;
 
 	// ~5 degrees either way so stop moving
 	if (angleDif >= -0.0872665 && angleDif <= 0.0872665)
@@ -97,24 +97,28 @@ void AutoNav::lookAt(int x, int y, float &az)
 	}
 	else if (angleDif > 0 && angleDif <= 0.44)  // ~ 25 degrees
 	{
+//		az = -abs(angleDif-.15);
 		az = -0.15;
 	}
 	else if (angleDif >= -0.44 && angleDif < 0)
 	{
+//		az = abs(angleDif + .15);
 		az = 0.15;
 	}
 	else if (angleDif > 0.44)
 	{
+//		az = -abs(angleDif + .5);
 		az = -1.75;
 	}
 	else if (angleDif < -0.44)
 	{
+//		az = abs(angleDif - .5);
 		az = 1.75;
 	}
 
-	if (switchDir) {
-		az = -az;
-	}
+//	if (switchDir) {
+//		az = -az;
+//	}
 
 //	az = 0.25;
 
@@ -337,9 +341,9 @@ void AutoNav::doNav(){
 				}else
 				{					
 					//look at the averaged point
-					lookAt(averageX, averageY, az);					
+					lookAt(averageX, averageY, az);
 					lx = 0.5-az;
-					if(lx < 0 || lx > 0.5) lx = 0; //dont go backwards 
+					if(lx < 0 || lx > 0.5) lx = 0; //dont go backwards
 				}
 
 				//if we get half way through the path lets recalculate
