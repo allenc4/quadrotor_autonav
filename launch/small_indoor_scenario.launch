@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+
+<launch>
+	   
+  <!-- Start Gazebo with wg world running in (max) realtime -->
+  <!-- <include file="$(find hector_gazebo_worlds)/launch/willow_garage.launch"/> -->
+  <include file="$(find quadroter_auto_nav)/launch/world.launch">
+    <arg name="world" value="$(find quadroter_auto_nav)/worlds/small_indoor_scenario.world"/> 
+  </include>
+
+  <include file="$(find quadroter_auto_nav)/launch/common.launch"/>
+
+</launch>
