@@ -20,7 +20,5 @@
   
   <!-- Start rviz visualization with preset config -->
   <node pkg="rviz" type="rviz" name="rviz" args="-d $(find quadroter_auto_nav)/rviz_cfg/config.rviz"/>
-   
-   <node name="main" pkg="quadroter_auto_nav" type="main" />
 
 </launch>
