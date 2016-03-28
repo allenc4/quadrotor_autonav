@@ -220,11 +220,10 @@ void AutoNav::doNav(){
 						averageX += path.at(i).x;
 						averageY += path.at(i).y;
 					}
-					if (obstacle) {
-						break;
+					if (!obstacle) {
+						averageX /= pointsToAverage;
+						averageY /= pointsToAverage;
 					}
-					averageX /= pointsToAverage;
-					averageY /= pointsToAverage;
 				}else
 				{
 					averageX = nextPath.x;
@@ -247,7 +246,7 @@ void AutoNav::doNav(){
 				double angleDif = fabs(lookAt(averageX, averageY, az));
 				if (obstacle == true && angleDif <= 0.0872665) {
 					// There is an obstacle, so only move if the angle difference is minuscule
-					lx = 0.25;
+					lx = 0.15;
 					std::cout << "Obstacle detected. Small angle difference. Proceed with caution." << std::endl;
 				}
 				else if (obstacle == false && angleDif <= 0.75) {
@@ -258,11 +257,7 @@ void AutoNav::doNav(){
 					}
 					std::cout << "No obstacles. Moving..." << lx << std::endl;
 				}
-				else if (obstacle) {
-					std::cout << "Obstacle detected. Stop until we get a small angle difference." << std::endl;
-				}
 				if(lx < 0 || lx > 0.75) lx = 0; //dont go backwards
-
 
 				//if we get half way through the path lets recalculate
 				if(path.size() <= startPathSize/2)
