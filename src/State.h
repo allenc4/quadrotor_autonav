@@ -15,6 +15,7 @@ public:
 	float value;
 	float cost;
 	int priority;
+	bool obstacle;
 	State * parent;
 	bool operator< (const State& rhs) const {
 		return this->priority > rhs.priority; //have to switch the signs because

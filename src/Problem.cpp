@@ -126,7 +126,7 @@ int Problem::heuristic(State state){
 }
 
 int Problem::checkStateForObstacle(State state){
-	int threshold = 9;
+	int threshold = 12;
 	int score = 0;
 	for(int y = -threshold; y < threshold; y++)
 	{
@@ -134,7 +134,6 @@ int Problem::checkStateForObstacle(State state){
 		{
 			if(this->map->data[CommonUtils::getIndex(state.x+x, state.y+y, this->map)] > 0)
 			{
-
 				score += 1000000/(std::max(abs(y), abs(x))+1);
 			}
 		}
@@ -190,7 +189,12 @@ std::vector<State> Problem::search(State startState){
 			{
 				debug->addPoint(CommonUtils::getTransformXPoint(state->x, map), CommonUtils::getTransformYPoint(state->y, map), 0);
 				State successor = successors[i];
-				successor.priority = successor.cost + this->heuristic(successor);
+				int heuristic = this->heuristic(successor);
+				successor.priority = successor.cost + heuristic;
+				if (heuristic > 0) {
+					successor.obstacle = true;
+				}
+
 				successor.parent = state;
 				//std::cout << "\tSuccessor: (" << successor.x << ", " << successor.y << ") Priority: " << successor.priority << " Parent: " << successor.parent << std::endl;
 				frontier.push(successor);

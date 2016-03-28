@@ -5,6 +5,7 @@ State::State(int x, int y, float value){
 	this->y = y;
 	this->value = value;
 	priority = 0;
+	obstacle = false;
 	parent = NULL;
 }
 

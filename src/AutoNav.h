@@ -34,11 +34,10 @@ public:
 	void doNav();
 	void land();
 //	void moveTo(tf::StampedTransform pose, float x, float y, float & lx, float & ly);
-	void moveTo(float x, float y, float & lx, float & ly);
 //	void lookAt(tf::StampedTransform pose, float x, float y, float & ax, float & ay);
-	void lookAt(int x, int y, float &az);
+	double lookAt(int x, int y, float &az);
 	void sendMessage(float linX, float linY, float linZ, float angX, float angY, float angZ);
-//	void getSurroundingPoints(int centerX, int centerY, int threshold);
+//	bool checkForObstacles(int curX, int curY);
 private:
 	double getDistance(int x1, int y1, int x2, int y2);
 	//ROS Main Handler
@@ -50,7 +49,6 @@ private:
 	//ROS Subscribers
 	ros::Subscriber map_sub;	//gets the current occupancy grid
 	ros::Subscriber sonar_sub;	//gets the current sonar readings
-	ros::Subscriber pose_sub;	//gets the estimated robot pose (orientation)
 
 	//TF
 	tf::TransformListener listener;	//listens for location updates
