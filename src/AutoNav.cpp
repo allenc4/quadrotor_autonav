@@ -200,6 +200,7 @@ void AutoNav::doNav(){
 				currentIndex = CommonUtils::getIndex(gridx,gridy, map);
 				Problem p(nh, map);
 				State startState(gridx, gridy, map->data[currentIndex]);
+
 				path = p.search(startState);
 				std::cout << "Got Path with size " << path.size() << " and Cost " << path.front().priority << std::endl;
 				startPathSize = path.size();
