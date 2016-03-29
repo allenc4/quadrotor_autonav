@@ -119,23 +119,27 @@ std::vector<State> Problem::getSuccessors(State state){
 	return successors;
 }
 
-int Problem::heuristic(State state){
+int Problem::heuristic(State& state){
 	int score = 0;
 	score += this->checkStateForObstacle(state);
 	return score;
 }
 
-int Problem::checkStateForObstacle(State state){
+int Problem::checkStateForObstacle(State& state){
 	int threshold = 9;
+//	int obstacleThreshold = 15;
 	int score = 0;
+
 	for(int y = -threshold; y < threshold; y++)
 	{
 		for(int x = -threshold; x < threshold; x++)
 		{
 			if(this->map->data[CommonUtils::getIndex(state.x+x, state.y+y, this->map)] > 0)
 			{
-
-				score += 1000000/(std::max(abs(y), abs(x))+1);
+				state.obstacle = true;
+//				if (std::max(abs(y), abs(x)) <= obstacleThreshold) {
+					score += 1000000/(std::max(abs(y), abs(x))+1);
+//				}
 			}
 		}
 	}
@@ -190,7 +194,9 @@ std::vector<State> Problem::search(State startState){
 			{
 				debug->addPoint(CommonUtils::getTransformXPoint(state->x, map), CommonUtils::getTransformYPoint(state->y, map), 0);
 				State successor = successors[i];
+				int heuristic = this->heuristic(successor);
 				successor.priority = successor.cost + this->heuristic(successor);
+
 				successor.parent = state;
 				//std::cout << "\tSuccessor: (" << successor.x << ", " << successor.y << ") Priority: " << successor.priority << " Parent: " << successor.parent << std::endl;
 				frontier.push(successor);

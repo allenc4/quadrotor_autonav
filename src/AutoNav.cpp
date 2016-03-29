@@ -13,7 +13,6 @@ static timestamp_t get_timestamp ()
 
 nav_msgs::OccupancyGrid::ConstPtr map;
 sensor_msgs::Range::ConstPtr height;
-geometry_msgs::PoseStamped::ConstPtr pose;
 
 void mapCallback(const nav_msgs::OccupancyGrid::ConstPtr &msg)
 {
@@ -25,30 +24,19 @@ void sonarCallback(const sensor_msgs::Range::ConstPtr &msg)
 	height = msg;
 }
 
-void poseCallback(const geometry_msgs::PoseStamped::ConstPtr &msg)
-{
-	pose = msg;
-}
-
 AutoNav::AutoNav(ros::NodeHandle &n)
 {
 	nh = n;
 	cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("/cmd_vel", 1);
 	debug = new Debugger(nh, "AutoNav");
-	lookatDebug = new Debugger(nh, "lookat");
+	lookatDebug = new Debugger(nh, "lookat", 0,0,255);
+	averagedDebug = new Debugger(nh, "averaged", 0,255,255);
 	map_sub = nh.subscribe("/map", 1, mapCallback); //topic, queue size, callback
 	sonar_sub = nh.subscribe("/sonar_height", 1, sonarCallback);
-	pose_sub = nh.subscribe("/slam_out_pose", 1, poseCallback);
-}
-
-//void AutoNav::moveTo(tf::StampedTransform pose, float x, float y, float & lx, float & ly)
-void AutoNav::moveTo(float x, float y, float & lx, float & ly)
-{
-	
 }
 
 //void AutoNav::lookAt(tf::StampedTransform pose, float x, float y, float & ax, float & ay)
-void AutoNav::lookAt(int x, int y, float &az)
+double AutoNav::lookAt(int x, int y, float &az)
 {
 	int curX = CommonUtils::getGridXPoint(transform.getOrigin().x(), map);
 	int curY = CommonUtils::getGridYPoint(transform.getOrigin().y(), map);
@@ -85,9 +73,9 @@ void AutoNav::lookAt(int x, int y, float &az)
 //		angleDif = angles::normalize_angle(baseToNextAngle - angle);
 //	}
 
-	std::cout << "Quadrotor Angle: " << (int) angles::to_degrees(angle) <<
-				"   baseToNext: " << (int) angles::to_degrees(baseToNextAngle) <<
-				"   compensation: " << (int) angles::to_degrees(angleDif) << std::endl;
+//	std::cout << "Quadrotor Angle: " << (int) angles::to_degrees(angle) <<
+//				"   baseToNext: " << (int) angles::to_degrees(baseToNextAngle) <<
+//				"   compensation: " << (int) angles::to_degrees(angleDif) << std::endl;
 //				"   switchDir: " << switchDir << std::endl;
 
 	// ~5 degrees either way so stop moving
@@ -132,93 +120,7 @@ void AutoNav::lookAt(int x, int y, float &az)
 					CommonUtils::getTransformYPoint(baseY, map),
 					0);
 
-//	// Fix the angle
-//	double angleDeg = angles::to_degrees(angle);
-//	if (angleDeg > 90 && angleDeg < 180) {
-//		angleDeg -= 180;
-//	} else if (angleDeg >= 180 && angleDeg < 270) {
-//		angleDeg -= 180;
-//	} else if (angleDeg >= 270) {
-//		angleDeg -= 360;
-//	}
-//	// Get a point 25 units on the current facing line of sight
-//	int newX = 25 * cos(angles::from_degrees(angleDeg));
-//	int newY = 25 * sin(angles::from_degrees(angleDeg));
-
-
-//	if (angles::to_degrees(angle) > 90 && angles::to_degrees(angle) <= 270) {
-//		newX += curX;
-//		newY += curY;
-//	} else {
-//		newX = curX - newX;
-//		newY = curY - newY;
-//	}
-
-
-	// Now, we have three points on a triangle to compute the angle. So get the distances
-//	double newToCurDist = getDistance(newX, newY, curX, curY);
-//	double curToNextDist = getDistance(curX, curY, x, y);
-//	double newToNextDist = getDistance(newX, newY, x, y);
-//
-//	// We need to get the angle opposite from the new coordinate to the next coordinate (newToNextDist),
-//	// because that is the angle we are going to be turning to look at the next position.
-//
-//	// Use the cosine rule since sine will only give us acute angles
-//	double newToNextAngle = acos(
-//			(pow(newToCurDist, 2) + pow(curToNextDist, 2) - pow(newToNextDist, 2)) / (2 * newToCurDist * curToNextDist)  // Get cos(newToNextDist)
-//			);
-//
-//
-////	angle = angles::normalize_angle_positive(angle + newToNextAngle);
-//	angle -= newToNextAngle;
-//
-//	std::cout << "Quadrotor Angle: " << angles::to_degrees(angles::normalize_angle_positive(PI + tf::getYaw(transform.getRotation()))) <<
-//			"   newToNext: " << angles::to_degrees(newToNextAngle) <<
-//			std::endl;
-//
-//	// Check if we have to change direction
-//	bool switchDir = false;
-//	if (prevAngle == -1) {
-//		prevAngle = newToNextAngle;
-//	} else if (prevAngle != -1 && prevAngle > newToNextAngle) {
-//		switchDir = true;
-//		prevAngle = newToNextAngle;
-//	}
-//
-//	double angleDif = angles::normalize_angle(tf::getYaw(transform.getRotation()) - angle - PI);
-////	std::cout << "Angle compensation: " << angles::to_degrees(angleDif) << std::endl;
-//
-//////	// ~5 degrees either way so stop moving
-//	if(angleDif <= 0.0872665)
-//	{
-//		az = 0;
-//	}
-//	else if (angleDif <= 0.44 && angleDif > 0)
-//	{
-//		if (az >= 0) {
-//			az = 0.05;
-//		} else {
-//			az = -0.05;
-//		}
-//	}
-//	else if (angleDif > 0.44)  // ~25 degrees
-//	{
-//		if (az >= 0) {
-//			az = 0.75;
-//		} else {
-//			az = -0.75;
-//		}
-//	}
-//
-//	if (az != 0 && switchDir) {
-//		az = -1 * az;
-//	}
-//	az = 0.15;
-//
-//	lookatDebug->addPoint(CommonUtils::getTransformXPoint(newX, map),
-//			CommonUtils::getTransformYPoint(newY, map),
-//			0);
-
+	return angleDif;
 
 }
 
@@ -258,6 +160,7 @@ void AutoNav::doNav(){
 
 		debug->removePoints();
 		lookatDebug->removePoints();
+		averagedDebug->removePoints();
 
 		lx = ly = lz = 0;
 		ax = ay = az = 0;
@@ -272,21 +175,25 @@ void AutoNav::doNav(){
 
 			if(transform.getOrigin().z() >= 1.5)
 			{
+				std::cout << "To High going down" << std::endl;
 				atHeight = false;
 				lz = 0.25;
 			}
 			else if(!atHeight && transform.getOrigin().z() < 1)
 			{
+				std::cout << "To Low Going Up..." << std::endl;
 				//start with getting off the ground
 				lz = 0.5;
 			}
 			else if(!atHeight && transform.getOrigin().z() >= 1)
 			{
+				std::cout << "At Height" << std::endl;
 				atHeight = true;
 				lz = -0.25;
 			}
 			else if(path.size() == 0 && atHeight == true)
 			{
+				std::cout << "Finding path..." << std::endl;
 				gridx = CommonUtils::getGridXPoint(ox, map);
 				gridy = CommonUtils::getGridYPoint(oy, map);
 				
@@ -299,27 +206,40 @@ void AutoNav::doNav(){
 			}
 			else if(path.size() > 0)
 			{
+				std::cout << "Traversing Path" << std::endl;
+				State nextPath = path.back();
+				bool obstacle = nextPath.obstacle;
+
 				int averageX = 0;
 				int averageY = 0;
 				int pointsToAverage = 4;
 
-				if(path.size() >= pointsToAverage)
+				std::cout << "Averageing path..." << std::endl;
+				if(path.size() >= pointsToAverage && obstacle == false)
 				{
 					for(int i = path.size()-1; i > path.size()-1-pointsToAverage; i--)
 					{
+						if (path.at(i).obstacle) {
+							obstacle = true;
+							averageX = nextPath.x;
+							averageY = nextPath.y;
+							break;
+						}
 						averageX += path.at(i).x;
 						averageY += path.at(i).y;
 					}
-					averageX /= pointsToAverage;
-					averageY /= pointsToAverage;
+					if (!obstacle) {
+						averageX /= pointsToAverage;
+						averageY /= pointsToAverage;
+					}
 				}else
 				{
-					averageX = path.front().x;
-					averageY = path.front().y;
+					averageX = nextPath.x;
+					averageY = nextPath.y;
 				}
 
-				float nextX = CommonUtils::getTransformXPoint(averageX, map);
-				float nextY = CommonUtils::getTransformYPoint(averageY, map);
+				averagedDebug->addPoint(CommonUtils::getTransformXPoint(averageX, map), CommonUtils::getTransformYPoint(averageY, map), 0);
+
 
 				float thresholdX = abs(averageX - CommonUtils::getGridXPoint(transform.getOrigin().x(), map));
 				float thresholdY = abs(averageY - CommonUtils::getGridYPoint(transform.getOrigin().y(), map));
@@ -327,24 +247,28 @@ void AutoNav::doNav(){
 				//if we get close to the point then remove it from the path
 				if(thresholdX <= 2 && thresholdY <= 2)
 				{
-					std::cout << "Got to point" << std::endl;
+					// std::cout << "Got to point" << std::endl;
 					path.pop_back();
 				}
 
-				//if for some reason re magically become really far away
-				//recalculate the path.  we probably hit a wall or something.
-				if(thresholdX >= 20 || thresholdY >= 20){
-					std::cout << "To Far away" << std::endl;
-					path.clear();
-					lx = 0;
-					az = 0;
-				}else
-				{					
-					//look at the averaged point
-					lookAt(averageX, averageY, az);
-					lx = 0.5-az;
-					if(lx < 0 || lx > 0.5) lx = 0; //dont go backwards
+				//look at the next (or average) point
+				//if no obstacles, move if within angle range
+				//if obstacle, move ONLY if angle range is within ~5 degrees so we dont hit anything
+				double angleDif = fabs(lookAt(averageX, averageY, az));
+				if (obstacle == true && angleDif <= 0.0872665) {
+					// There is an obstacle, so only move if the angle difference is minuscule
+					lx = 0.15;
+					// std::cout << "Obstacle detected. Small angle difference. Proceed with caution." << std::endl;
 				}
+				else if (obstacle == false && angleDif <= 0.75) {
+					// Angle is within ~45 degrees, so keep moving if not within any obstacles
+					lx = 0.75 - angleDif;
+					if (lx > 0.5) {
+						lx -= (lx - 0.4);
+					}
+					// std::cout << "No obstacles. Moving..." << lx << std::endl;
+				}
+				if(lx < 0 || lx > 0.75) lx = 0; //dont go backwards
 
 				//if we get half way through the path lets recalculate
 				if(path.size() <= startPathSize/2)
@@ -359,6 +283,7 @@ void AutoNav::doNav(){
 			}
 			debug->publishPoints();
 			lookatDebug->publishPoints();
+			averagedDebug->publishPoints();
 			sendMessage(lx, ly, lz, ax, ay, az);
 		}catch(tf::TransformException &ex)
 		{
@@ -370,18 +295,20 @@ void AutoNav::doNav(){
 
 // Gets a list of occupancy grid indexes where there is an obstacle
 // within a square around the UAV (boundary length determined by threshold)
-//void AutoNav::getSurroundingPoints(int centerX, int centerY, int threshold) {
-//	std::vector<int> occupiedIndexies;
+//bool AutoNav::checkForObstacles(int curX, int curY) {
+//	int threshold = 8;
 //
-//	for (int i = centerX - threshold; i <= centerX + threshold; i++) {
-//		for (int j = centerY - threshold; j <= centerY + threshold; j++) {
-//			// Convert x and y into single index for occupancy grid
-//			int curIndex = (i * map->info.width) + j;
-//			if (map->data[curIndex] == this->MAP_POSITIVE_OBJECT_OCCUPIED) {
-//				occupiedIndexies.push_back(curIndex);
+//	for(int y = -threshold; y < threshold; y++)
+//	{
+//		for(int x = -threshold; x < threshold; x++)
+//		{
+//			if(map->data[CommonUtils::getIndex(curX + x, curY + y, map)] > 0)
+//			{
+//				return true;
 //			}
 //		}
 //	}
+//	return false;
 //}
 
 void AutoNav::land()
