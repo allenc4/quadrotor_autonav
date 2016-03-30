@@ -177,13 +177,14 @@ void AutoNav::doNav(){
 			{
 				std::cout << "To High going down" << std::endl;
 				atHeight = false;
-				lz = 0.25;
+				lz = -0.25;
 			}
 			else if(!atHeight && transform.getOrigin().z() < 1)
 			{
 				std::cout << "To Low Going Up..." << std::endl;
 				//start with getting off the ground
 				lz = 0.5;
+				az = 0.75;
 			}
 			else if(!atHeight && transform.getOrigin().z() >= 1)
 			{
@@ -196,6 +197,9 @@ void AutoNav::doNav(){
 				std::cout << "Finding path..." << std::endl;
 				gridx = CommonUtils::getGridXPoint(ox, map);
 				gridy = CommonUtils::getGridYPoint(oy, map);
+
+				//if we are looking for a path then we stop
+				sendMessage(0,0,0,0,0,0);
 				
 				currentIndex = CommonUtils::getIndex(gridx,gridy, map);
 				Problem p(nh, map);
@@ -259,11 +263,11 @@ void AutoNav::doNav(){
 				if (obstacle == true && angleDif <= 0.0872665) {
 					// There is an obstacle, so only move if the angle difference is minuscule
 					lx = 0.15;
-					// std::cout << "Obstacle detected. Small angle difference. Proceed with caution." << std::endl;
+					std::cout << "Obstacle detected. Small angle difference. Proceed with caution." << std::endl;
 				}
 				else if (obstacle == false && angleDif <= 0.75) {
 					// Angle is within ~45 degrees, so keep moving if not within any obstacles
-					lx = 0.75 - angleDif;
+					lx = 0.5 - angleDif;
 					if (lx > 0.5) {
 						lx -= (lx - 0.4);
 					}
@@ -274,6 +278,7 @@ void AutoNav::doNav(){
 				//if we get half way through the path lets recalculate
 				if(path.size() <= startPathSize/2)
 				{
+					std::cout << "Recalculating..." << std::endl;
 					path.clear();
 				}
 

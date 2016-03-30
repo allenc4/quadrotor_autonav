@@ -27,7 +27,7 @@ bool Problem::isGoalState(State state){
 //currently only did N,S,E,W can do NE,NW,SE,SW after
 std::vector<State> Problem::getSuccessors(State state){
 	std::vector<State> successors;
-	int successorOffset = 4;
+	int successorOffset = 2;
 	if(state.y > successorOffset)
 	{
 		//get the immediatly next north grid point
@@ -148,7 +148,7 @@ int Problem::checkStateForObstacle(State& state){
 
 std::vector<State> Problem::search(State startState){
 
-//	std::cout << "Attempting search..." << std::endl;
+	std::cout << "Attempting search..." << std::endl;
 	std::set<State, SetCompare> closedList;  //used the SetCompare to compare the x,y 
 
 	std::priority_queue<State> frontier;
@@ -169,22 +169,28 @@ std::vector<State> Problem::search(State startState){
 		state->priority = s.priority;
 		frontier.pop(); //removes top node
 	
-		//std::cout << "Processing state at (" << state.x << ", " << state.y << ") Priority: " << state.priority << " Value: " << state.value << " Path Size: " << state.path.size();
+		// std::cout << "Processing state at (" << state->x << ", " << state->y << ") Priority: " << state->priority << " Value: " << state->value << std::endl;
 		if(this->isGoalState(*state))
 		{
-			//std::cout << "Found Path " << state.path.size() << std::endl;
 			std::vector<State> path;
 
-//			std::cout << "Found goal (" << state->x << ", " << state->y << ") Parent: " << state->parent << std::endl;
+			// std::cout << "Found goal (" << state->x << ", " << state->y << ") Parent: " << state->parent << std::endl;
 
 			State * temp = state;
 
+			if(temp->parent == NULL)
+			{
+				path.push_back(*temp);
+				return path;
+			}
+
 			while(temp->parent != NULL)
 			{
-//				std::cout << "Adding (" << temp->x << ", " << temp->y << ") to path. COST: " << temp->priority << std::endl;
+				// std::cout << "Adding (" << temp->x << ", " << temp->y << ") to path. COST: " << temp->priority << std::endl;
 				path.push_back(*temp);
 				temp = temp->parent;
 			}
+
 
 			return path;
 		}else if(closedList.find(*state) == closedList.end()){
@@ -198,7 +204,7 @@ std::vector<State> Problem::search(State startState){
 				successor.priority = successor.cost + this->heuristic(successor);
 
 				successor.parent = state;
-				//std::cout << "\tSuccessor: (" << successor.x << ", " << successor.y << ") Priority: " << successor.priority << " Parent: " << successor.parent << std::endl;
+				// std::cout << "\tSuccessor: (" << successor.x << ", " << successor.y << ") Priority: " << successor.priority << " Parent: " << successor.parent << std::endl;
 				frontier.push(successor);
 			}
 		}
