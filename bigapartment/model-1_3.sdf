@@ -7,7 +7,7 @@
       <collision name="collision">
         <geometry>
           <mesh>
-            <uri>model://bigapartment/meshes/apartment_floor_plan.dae</uri>
+            <uri>model://bigapartment/meshes/apartment_floor_plan_collision.dae</uri>
           </mesh>
         </geometry>
       </collision>
