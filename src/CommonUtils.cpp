@@ -28,3 +28,8 @@ int CommonUtils::getIndex(int gridx, int gridy, nav_msgs::OccupancyGrid::ConstPt
 {
 	return gridx + gridy * map->info.width;
 }
+
+double CommonUtils::getDistance(int x1, int y1, int x2, int y2)
+{
+	return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
+}

@@ -24,11 +24,13 @@ public:
 	std::vector<State> getSuccessors(State state);
 	int heuristic(State& state);
 	std::vector<State> search(State state);
+	std::vector<State> search(State startState, State goalState);
 	int checkStateForObstacle(State& state);
 private:
 	std::vector<State> goalStates;
 	nav_msgs::OccupancyGrid::ConstPtr map;
 	Debugger * debug;
+	int successorOffset;
 };
 
 

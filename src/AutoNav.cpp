@@ -50,9 +50,9 @@ double AutoNav::lookAt(int x, int y, float &az)
 
 
 	// Now, we have three points on a triangle to compute the angle. So get the distances
-	double baseToCurDist = getDistance(baseX, baseY, curX, curY);
-	double curToNextDist = getDistance(curX, curY, x, y);
-	double baseToNextDist = getDistance(baseX, baseY, x, y);
+	double baseToCurDist = CommonUtils::getDistance(baseX, baseY, curX, curY);
+	double curToNextDist = CommonUtils::getDistance(curX, curY, x, y);
+	double baseToNextDist = CommonUtils::getDistance(baseX, baseY, x, y);
 
 	// We need to get the angle opposite from the new coordinate to the next coordinate (baseToNextDist),
 	// because that is the angle we are going to be turning to look at the next position.
@@ -124,11 +124,6 @@ double AutoNav::lookAt(int x, int y, float &az)
 
 }
 
-double AutoNav::getDistance(int x1, int y1, int x2, int y2)
-{
-	return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
-}
-
 void AutoNav::sendMessage(float linX, float linY, float linZ, float angX, float angY, float angZ)
 {
 	geometry_msgs::Twist cmd;
@@ -153,6 +148,10 @@ void AutoNav::doNav(){
 	std::vector<State> path;
 	bool atHeight = false;
 	int startPathSize = 0;
+	bool lookingAtGoal = false;
+	bool fullyExplored = false;
+	float startingXPoint = 0.0;
+	float startingYPoint = 0.0;
 
 	while(nh.ok())
 	{
@@ -173,6 +172,8 @@ void AutoNav::doNav(){
 			float oy = transform.getOrigin().y();
 			float ox = transform.getOrigin().x();
 
+
+
 			if(transform.getOrigin().z() >= 1.5)
 			{
 				std::cout << "To High going down" << std::endl;
@@ -181,6 +182,8 @@ void AutoNav::doNav(){
 			}
 			else if(!atHeight && transform.getOrigin().z() < 1)
 			{
+				startingYPoint = oy;
+				startingXPoint = ox;
 				std::cout << "To Low Going Up..." << std::endl;
 				//start with getting off the ground
 				lz = 0.5;
@@ -188,12 +191,13 @@ void AutoNav::doNav(){
 			}
 			else if(!atHeight && transform.getOrigin().z() >= 1)
 			{
-				std::cout << "At Height" << std::endl;
+				std::cout << "At Height" << startingXPoint << " " << startingYPoint << std::endl;
 				atHeight = true;
 				lz = -0.25;
 			}
-			else if(path.size() == 0 && atHeight == true)
+			else if(path.size() == 0 && atHeight == true && !fullyExplored)
 			{
+				lookingAtGoal = false;
 				std::cout << "Finding path..." << std::endl;
 				gridx = CommonUtils::getGridXPoint(ox, map);
 				gridy = CommonUtils::getGridYPoint(oy, map);
@@ -206,23 +210,61 @@ void AutoNav::doNav(){
 				State startState(gridx, gridy, map->data[currentIndex]);
 
 				path = p.search(startState);
-				std::cout << "Got Path with size " << path.size() << " and Cost " << path.front().priority << std::endl;
-				startPathSize = path.size();
+				if(path.size() > 0){
+					std::cout << "Got Path with size " << path.size() << " and Cost " << path.front().priority << " and Divided Cost " << path.front().priority/path.size() << std::endl;
+					startPathSize = path.size();
+				}else{
+					std::cout << "Couldn't Find a path to -1 fully explored!" << std::endl;
+					fullyExplored = true;
+				}
+			}else if(path.size() == 0 && fullyExplored){
+				sendMessage(0,0,0,0,0,0);
+				std::cout << "Finding path..." << std::endl;
+				gridx = CommonUtils::getGridXPoint(ox, map);
+				gridy = CommonUtils::getGridYPoint(oy, map);
+
+				//if we are looking for a path then we stop
+				currentIndex = CommonUtils::getIndex(gridx,gridy, map);
+				Problem p(nh, map);
+				State startState(gridx, gridy, map->data[currentIndex]);
+				State goalState(CommonUtils::getGridXPoint(startingXPoint, map),CommonUtils::getGridYPoint(startingYPoint,map), map->data[CommonUtils::getIndex(0,0,map)]);
+
+				path = p.search(startState, goalState);
+				if(path.size() == 0)
+				{
+					std::cout << "Couldn't find a path to " << goalState.x << " " << goalState.y << std::endl;
+				}
+			}
+			else if(path.size() > 0 && !lookingAtGoal)
+			{
+				double angel = lookAt(path.front().x, path.front().y, az);
+				if(angel <= 0.0872665)
+				{
+					lookingAtGoal = true;
+					if(map->data[CommonUtils::getIndex(path.front().x, path.front().y, map)] != -1)
+					{
+						std::cout << "Goal explored" << std::endl;
+						path.clear();
+					}
+				}
 			}
 			else if(path.size() > 0)
 			{
-				std::cout << "Traversing Path" << std::endl;
+				// std::cout << "Traversing Path" << std::endl;
 				State nextPath = path.back();
 				bool obstacle = nextPath.obstacle;
 
 				int averageX = 0;
 				int averageY = 0;
 				int pointsToAverage = 4;
+				int pointsAveraged = 1;
 
-				std::cout << "Averageing path..." << std::endl;
+				// std::cout << "Averageing path..." << std::endl;
 				if(path.size() >= pointsToAverage && obstacle == false)
 				{
-					for(int i = path.size()-1; i > path.size()-1-pointsToAverage; i--)
+					averageX += path.back().x;
+					averageY += path.back().y;
+					for(int i = path.size()-2; i > path.size()-1-pointsToAverage; i--)
 					{
 						if (path.at(i).obstacle) {
 							obstacle = true;
@@ -232,10 +274,11 @@ void AutoNav::doNav(){
 						}
 						averageX += path.at(i).x;
 						averageY += path.at(i).y;
+						pointsAveraged++;
 					}
 					if (!obstacle) {
-						averageX /= pointsToAverage;
-						averageY /= pointsToAverage;
+						averageX /= pointsAveraged;
+						averageY /= pointsAveraged;
 					}
 				}else
 				{
@@ -260,12 +303,12 @@ void AutoNav::doNav(){
 				//if no obstacles, move if within angle range
 				//if obstacle, move ONLY if angle range is within ~5 degrees so we dont hit anything
 				double angleDif = fabs(lookAt(averageX, averageY, az));
-				if (obstacle == true && angleDif <= 0.0872665) {
+				/*if (obstacle == true && angleDif <= 0.0872665) {
 					// There is an obstacle, so only move if the angle difference is minuscule
-					lx = 0.15;
-					std::cout << "Obstacle detected. Small angle difference. Proceed with caution." << std::endl;
+					 lx = 0.15;
+					// std::cout << "Obstacle detected. Small angle difference. Proceed with caution." << std::endl;
 				}
-				else if (obstacle == false && angleDif <= 0.75) {
+				else*/ if (/*obstacle == false &&*/ angleDif <= 0.75) {
 					// Angle is within ~45 degrees, so keep moving if not within any obstacles
 					lx = 0.5 - angleDif;
 					if (lx > 0.5) {
@@ -278,7 +321,7 @@ void AutoNav::doNav(){
 				//if we get half way through the path lets recalculate
 				if(path.size() <= startPathSize/2)
 				{
-					std::cout << "Recalculating..." << std::endl;
+					// std::cout << "Recalculating..." << std::endl;
 					path.clear();
 				}
 

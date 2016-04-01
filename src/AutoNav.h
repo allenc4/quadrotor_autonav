@@ -39,7 +39,6 @@ public:
 	void sendMessage(float linX, float linY, float linZ, float angX, float angY, float angZ);
 //	bool checkForObstacles(int curX, int curY);
 private:
-	double getDistance(int x1, int y1, int x2, int y2);
 	//ROS Main Handler
 	ros::NodeHandle nh;
 
