@@ -13,6 +13,8 @@ static timestamp_t get_timestamp ()
 
 nav_msgs::OccupancyGrid::ConstPtr map;
 sensor_msgs::Range::ConstPtr height;
+geometry_msgs::PointStamped goal;
+bool hasPointGoal = false;
 
 void mapCallback(const nav_msgs::OccupancyGrid::ConstPtr &msg)
 {
@@ -24,6 +26,12 @@ void sonarCallback(const sensor_msgs::Range::ConstPtr &msg)
 	height = msg;
 }
 
+void goalCallback(const geometry_msgs::PointStamped &msg)
+{
+	goal = msg;
+	hasPointGoal = true;
+}
+
 AutoNav::AutoNav(ros::NodeHandle &n)
 {
 	nh = n;
@@ -33,6 +41,8 @@ AutoNav::AutoNav(ros::NodeHandle &n)
 	averagedDebug = new Debugger(nh, "averaged", 0,255,255);
 	map_sub = nh.subscribe("/map", 1, mapCallback); //topic, queue size, callback
 	sonar_sub = nh.subscribe("/sonar_height", 1, sonarCallback);
+	goal_sub = nh.subscribe("/clicked_point", 1, goalCallback);
+
 }
 
 //void AutoNav::lookAt(tf::StampedTransform pose, float x, float y, float & ax, float & ay)
@@ -215,24 +225,35 @@ void AutoNav::doNav(){
 					startPathSize = path.size();
 				}else{
 					std::cout << "Couldn't Find a path to -1 fully explored!" << std::endl;
+					std::cout << "Now you may specify a point to go to via RVIZ" << std::endl;
 					fullyExplored = true;
 				}
 			}else if(path.size() == 0 && fullyExplored){
 				sendMessage(0,0,0,0,0,0);
-				std::cout << "Finding path..." << std::endl;
-				gridx = CommonUtils::getGridXPoint(ox, map);
-				gridy = CommonUtils::getGridYPoint(oy, map);
-
-				//if we are looking for a path then we stop
-				currentIndex = CommonUtils::getIndex(gridx,gridy, map);
-				Problem p(nh, map);
-				State startState(gridx, gridy, map->data[currentIndex]);
-				State goalState(CommonUtils::getGridXPoint(startingXPoint, map),CommonUtils::getGridYPoint(startingYPoint,map), map->data[CommonUtils::getIndex(0,0,map)]);
-
-				path = p.search(startState, goalState);
-				if(path.size() == 0)
+				
+				if(hasPointGoal)
 				{
-					std::cout << "Couldn't find a path to " << goalState.x << " " << goalState.y << std::endl;
+					std::cout << "Goal Selected (" << goal.point.x << ", " << goal.point.y << ")" << std::endl;
+					hasPointGoal = false; 
+
+					Problem p(nh, map);
+
+					int startX = CommonUtils::getGridXPoint(ox, map);
+					int startY = CommonUtils::getGridYPoint(oy, map);
+					int startIndex = CommonUtils::getIndex(startX,startY, map);
+					State startState(startX, startY, map->data[startIndex]);
+
+					int goalX = CommonUtils::getGridXPoint(goal.point.x, map);
+					int goalY = CommonUtils::getGridYPoint(goal.point.y, map);
+					int goalIndex = CommonUtils::getIndex(goalX,goalY, map);
+					State goalState(goalX, goalY, goalIndex);
+
+					path = p.search(startState, goalState);
+					if(path.size() == 0)
+					{
+						std::cout << "We were unable to find a path to (" << goal.point.x << ", " << goal.point.y << ")" << std::endl;
+						std::cout << "Please try picking a new point" << std::endl;
+					}
 				}
 			}
 			else if(path.size() > 0 && !lookingAtGoal)
@@ -241,7 +262,7 @@ void AutoNav::doNav(){
 				if(angel <= 0.0872665)
 				{
 					lookingAtGoal = true;
-					if(map->data[CommonUtils::getIndex(path.front().x, path.front().y, map)] != -1)
+					if(map->data[CommonUtils::getIndex(path.front().x, path.front().y, map)] != -1 && !fullyExplored)
 					{
 						std::cout << "Goal explored" << std::endl;
 						path.clear();

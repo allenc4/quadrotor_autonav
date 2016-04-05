@@ -14,6 +14,7 @@
 //ROS Topic Headers
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/PointStamped.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <sensor_msgs/Range.h>
 
@@ -48,6 +49,7 @@ private:
 	//ROS Subscribers
 	ros::Subscriber map_sub;	//gets the current occupancy grid
 	ros::Subscriber sonar_sub;	//gets the current sonar readings
+	ros::Subscriber goal_sub;	//gets the user designated goal
 
 	//TF
 	tf::TransformListener listener;	//listens for location updates
