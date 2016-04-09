@@ -5,6 +5,9 @@
 #include <iostream>
 #include <cstddef>
 
+/**
+ * Small class to hold various data about a state. Used during problem search.
+ */
 class State{
 public:
 	State(){};

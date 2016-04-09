@@ -4,6 +4,9 @@
 
 typedef unsigned long long timestamp_t;
 
+/**
+ * Returns the current time in microseconds
+ */
 static timestamp_t get_timestamp ()
 {
   struct timeval now;
@@ -45,9 +48,20 @@ AutoNav::AutoNav(ros::NodeHandle &n)
 
 }
 
-//void AutoNav::lookAt(tf::StampedTransform pose, float x, float y, float & ax, float & ay)
+/*
+ * Function takes in a given x and y coordinate value, calculates which way to turn, and turns
+ * so the front of the drone is facing the point (rotates on the z-axis).
+ * Note: This function will determine rotation speed (if needed), and sets the az velocity as necessary.
+ * This function must be called within a loop, as this function does NOT wait until the drone has rotated to a particular point.
+ *
+ * x: X coordinate to point towards
+ * y: Y coordinate to point towards
+ * az: angular velocity value on the z axis
+ * return: angle (in radians) that we need to rotate (sign of angle is used for rotational direction)
+ */
 double AutoNav::lookAt(int x, int y, float &az)
 {
+	// Get the current position of the drone
 	int curX = CommonUtils::getGridXPoint(transform.getOrigin().x(), map);
 	int curY = CommonUtils::getGridYPoint(transform.getOrigin().y(), map);
 
@@ -57,7 +71,6 @@ double AutoNav::lookAt(int x, int y, float &az)
 	// Get a point 10 units in the positive direction on the X axis from the current location
 	int baseX = curX - 10;
 	int baseY = curY;
-
 
 	// Now, we have three points on a triangle to compute the angle. So get the distances
 	double baseToCurDist = CommonUtils::getDistance(baseX, baseY, curX, curY);
@@ -78,11 +91,6 @@ double AutoNav::lookAt(int x, int y, float &az)
 
 	double angleDif = angles::normalize_angle(angle - baseToNextAngle);
 
-//	bool switchDir = false;
-//	if (angleDif > PI || angleDif < -PI) {
-//		angleDif = angles::normalize_angle(baseToNextAngle - angle);
-//	}
-
 //	std::cout << "Quadrotor Angle: " << (int) angles::to_degrees(angle) <<
 //				"   baseToNext: " << (int) angles::to_degrees(baseToNextAngle) <<
 //				"   compensation: " << (int) angles::to_degrees(angleDif) << std::endl;
@@ -95,31 +103,22 @@ double AutoNav::lookAt(int x, int y, float &az)
 	}
 	else if (angleDif > 0 && angleDif <= 0.44)  // ~ 25 degrees
 	{
-//		az = -abs(angleDif-.15);
 		az = -0.15;
 	}
 	else if (angleDif >= -0.44 && angleDif < 0)
 	{
-//		az = abs(angleDif + .15);
 		az = 0.15;
 	}
 	else if (angleDif > 0.44)
 	{
-//		az = -abs(angleDif + .5);
 		az = -1.75;
 	}
 	else if (angleDif < -0.44)
 	{
-//		az = abs(angleDif - .5);
 		az = 1.75;
 	}
 
-//	if (switchDir) {
-//		az = -az;
-//	}
-
-//	az = 0.25;
-
+	// Add points to RVIZ so we can see which points are being used to calculate the angle of the triangle
 	lookatDebug->addPoint(CommonUtils::getTransformXPoint(curX, map),
 				CommonUtils::getTransformYPoint(curY, map),
 				0);
@@ -127,13 +126,17 @@ double AutoNav::lookAt(int x, int y, float &az)
 				CommonUtils::getTransformYPoint(y, map),
 				0);
 	lookatDebug->addPoint(CommonUtils::getTransformXPoint(baseX, map),
-					CommonUtils::getTransformYPoint(baseY, map),
-					0);
+				CommonUtils::getTransformYPoint(baseY, map),
+				0);
 
 	return angleDif;
 
 }
 
+/**
+ * Send a geometry twist message (used to do the actual movement by ROS) using
+ * the given linear and angular velocity parameters.
+ */
 void AutoNav::sendMessage(float linX, float linY, float linZ, float angX, float angY, float angZ)
 {
 	geometry_msgs::Twist cmd;
@@ -148,8 +151,14 @@ void AutoNav::sendMessage(float linX, float linY, float linZ, float angX, float 
 }
 
 
+/**
+ * Main function of the AutoNav class that actually performs the navigation.
+ * Here, we traverse the entire map until we have fully explored it.
+ * We then wait for user input to go to a certain point.
+ */
 void AutoNav::doNav(){
 
+	// Setup and initialize various parameters and flags
 	float lx = 0.0, ly = 0.0f, lz = 0.0f;
 	float ax = 0.0f, ay = 0.0f, az = 0.0f;
 
@@ -163,6 +172,7 @@ void AutoNav::doNav(){
 	float startingXPoint = 0.0;
 	float startingYPoint = 0.0;
 
+	// For ROS, everything (outside of setups and initializations) is done within this loop
 	while(nh.ok())
 	{
 		ros::spinOnce(); // needed to get subscribed messages
@@ -182,8 +192,6 @@ void AutoNav::doNav(){
 			float oy = transform.getOrigin().y();
 			float ox = transform.getOrigin().x();
 
-
-
 			if(transform.getOrigin().z() >= 1.5)
 			{
 				std::cout << "To High going down" << std::endl;
@@ -197,7 +205,7 @@ void AutoNav::doNav(){
 				std::cout << "To Low Going Up..." << std::endl;
 				//start with getting off the ground
 				lz = 0.5;
-				az = 0.75;
+				az = 0.75; // As we go up, turn so we can get lidar data and start building the map
 			}
 			else if(!atHeight && transform.getOrigin().z() >= 1)
 			{
@@ -219,20 +227,25 @@ void AutoNav::doNav(){
 				Problem p(nh, map);
 				State startState(gridx, gridy, map->data[currentIndex]);
 
+				// Get a path to the nearest goal
 				path = p.search(startState);
 				if(path.size() > 0){
 					std::cout << "Got Path with size " << path.size() << " and Cost " << path.front().priority << " and Divided Cost " << path.front().priority/path.size() << std::endl;
 					startPathSize = path.size();
 				}else{
+					// No more states to explore, so map is fully traversed and known.
 					std::cout << "Couldn't Find a path to -1 fully explored!" << std::endl;
 					std::cout << "Now you may specify a point to go to via RVIZ" << std::endl;
 					fullyExplored = true;
 				}
-			}else if(path.size() == 0 && fullyExplored){
+			}
+			else if(path.size() == 0 && fullyExplored)
+			{
 				sendMessage(0,0,0,0,0,0);
 				
 				if(hasPointGoal)
 				{
+					// User selected a goal point in RVIZ
 					std::cout << "Goal Selected (" << goal.point.x << ", " << goal.point.y << ")" << std::endl;
 					hasPointGoal = false; 
 
@@ -248,6 +261,7 @@ void AutoNav::doNav(){
 					int goalIndex = CommonUtils::getIndex(goalX,goalY, map);
 					State goalState(goalX, goalY, goalIndex);
 
+					// Search for a path to the goal
 					path = p.search(startState, goalState);
 					if(path.size() == 0)
 					{
@@ -258,8 +272,8 @@ void AutoNav::doNav(){
 			}
 			else if(path.size() > 0 && !lookingAtGoal)
 			{
-				double angel = lookAt(path.front().x, path.front().y, az);
-				if(angel <= 0.0872665)
+				double angle = lookAt(path.front().x, path.front().y, az);
+				if(angle <= 0.0872665)
 				{
 					lookingAtGoal = true;
 					if(map->data[CommonUtils::getIndex(path.front().x, path.front().y, map)] != -1 && !fullyExplored)
@@ -271,6 +285,7 @@ void AutoNav::doNav(){
 			}
 			else if(path.size() > 0)
 			{
+				// There is a path defined, so traverse it
 				// std::cout << "Traversing Path" << std::endl;
 				State nextPath = path.back();
 				bool obstacle = nextPath.obstacle;
@@ -280,7 +295,8 @@ void AutoNav::doNav(){
 				int pointsToAverage = 4;
 				int pointsAveraged = 1;
 
-				// std::cout << "Averageing path..." << std::endl;
+				// Average the next three points to attempt to get a smoother flight forward
+				// std::cout << "Averaging path..." << std::endl;
 				if(path.size() >= pointsToAverage && obstacle == false)
 				{
 					averageX += path.back().x;
@@ -288,6 +304,8 @@ void AutoNav::doNav(){
 					for(int i = path.size()-2; i > path.size()-1-pointsToAverage; i--)
 					{
 						if (path.at(i).obstacle) {
+							// If there is an obstacle near a given point (within the allowed threshold),
+							// do not average the points and just use the next point.
 							obstacle = true;
 							averageX = nextPath.x;
 							averageY = nextPath.y;
@@ -307,8 +325,8 @@ void AutoNav::doNav(){
 					averageY = nextPath.y;
 				}
 
+				// Place the point to face in RVIZ
 				averagedDebug->addPoint(CommonUtils::getTransformXPoint(averageX, map), CommonUtils::getTransformYPoint(averageY, map), 0);
-
 
 				float thresholdX = abs(averageX - CommonUtils::getGridXPoint(transform.getOrigin().x(), map));
 				float thresholdY = abs(averageY - CommonUtils::getGridYPoint(transform.getOrigin().y(), map));
@@ -321,21 +339,14 @@ void AutoNav::doNav(){
 				}
 
 				//look at the next (or average) point
-				//if no obstacles, move if within angle range
-				//if obstacle, move ONLY if angle range is within ~5 degrees so we dont hit anything
 				double angleDif = fabs(lookAt(averageX, averageY, az));
-				/*if (obstacle == true && angleDif <= 0.0872665) {
-					// There is an obstacle, so only move if the angle difference is minuscule
-					 lx = 0.15;
-					// std::cout << "Obstacle detected. Small angle difference. Proceed with caution." << std::endl;
-				}
-				else*/ if (/*obstacle == false &&*/ angleDif <= 0.75) {
-					// Angle is within ~45 degrees, so keep moving if not within any obstacles
+				if (angleDif <= 0.75)
+				{
+					// Angle is within ~45 degrees, so keep moving (speed based on angle difference)
 					lx = 0.5 - angleDif;
 					if (lx > 0.5) {
 						lx -= (lx - 0.4);
 					}
-					// std::cout << "No obstacles. Moving..." << lx << std::endl;
 				}
 				if(lx < 0 || lx > 0.75) lx = 0; //dont go backwards
 
@@ -346,14 +357,15 @@ void AutoNav::doNav(){
 					path.clear();
 				}
 
+				// Show the path in RVIZ
 				for(std::vector<State>::iterator i = path.begin(); i != path.end(); ++i)
 				{
 					debug->addPoint(CommonUtils::getTransformXPoint(i->x, map), CommonUtils::getTransformYPoint(i->y, map), 0);
 				}
 			}
-			debug->publishPoints();
-			lookatDebug->publishPoints();
-			averagedDebug->publishPoints();
+			debug->publishPoints();  // Place all debug points added in RVIZ UI
+			lookatDebug->publishPoints();  // Place all lookatDebug points added in RVIZ UI
+			averagedDebug->publishPoints();  // Place all averagedDebug points added in RVIZ UI
 			sendMessage(lx, ly, lz, ax, ay, az);
 		}catch(tf::TransformException &ex)
 		{
@@ -363,24 +375,10 @@ void AutoNav::doNav(){
 	}
 }
 
-// Gets a list of occupancy grid indexes where there is an obstacle
-// within a square around the UAV (boundary length determined by threshold)
-//bool AutoNav::checkForObstacles(int curX, int curY) {
-//	int threshold = 8;
-//
-//	for(int y = -threshold; y < threshold; y++)
-//	{
-//		for(int x = -threshold; x < threshold; x++)
-//		{
-//			if(map->data[CommonUtils::getIndex(curX + x, curY + y, map)] > 0)
-//			{
-//				return true;
-//			}
-//		}
-//	}
-//	return false;
-//}
 
+/**
+ * Slowly land the drone.
+ */
 void AutoNav::land()
 {
 	sendMessage(0,0,-0.25,0,0,0);

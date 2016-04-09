@@ -27,6 +27,11 @@
 #include <vector>
 #include <angles/angles.h>
 
+/**
+ * Main class that handles navigation (given an unknown environment or placed in a known environment).
+ * Using the already implemented SLAM algorithm, use the occupancy grid generated to map and traverse
+ * an unknown environment. Once the entire map is known, this class allows movement to given positions.
+ */
 class AutoNav{
 
 public:
@@ -34,11 +39,9 @@ public:
 	AutoNav(ros::NodeHandle &n);
 	void doNav();
 	void land();
-//	void moveTo(tf::StampedTransform pose, float x, float y, float & lx, float & ly);
-//	void lookAt(tf::StampedTransform pose, float x, float y, float & ax, float & ay);
 	double lookAt(int x, int y, float &az);
 	void sendMessage(float linX, float linY, float linZ, float angX, float angY, float angZ);
-//	bool checkForObstacles(int curX, int curY);
+
 private:
 	//ROS Main Handler
 	ros::NodeHandle nh;
@@ -58,10 +61,6 @@ private:
 	Debugger * debug;
 	Debugger * lookatDebug;
 	Debugger * averagedDebug;
-
-	static const int MAP_UNEXPLORED = -1;
-	static const int MAP_POSITIVE_OBJECT_OCCUPIED = 100;
-	static const int MAP_POSITIVE_OBJECT_UNOCCUPIED = 0;
 
 	static const double PI = 3.14159265359;
 	static const double TWO_PI = 6.28318530718;
