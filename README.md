@@ -13,31 +13,30 @@ The main goal of this project is to create a starting point for a real, non-simu
 ## Installation
 
 **Software Prerequisites**
-    -ROS installation (see http://wiki.ros.org/ROS/Installation for installation and setup details)
-    -Hector_quadrotor installatdion (see http://wiki.ros.org/hector_quadrotor/Tutorials/Quadrotor%20indoor%20SLAM%20demo for installation and setup details)
+	*ROS installation (see http://wiki.ros.org/ROS/Installation for installation and setup details)
+	*Hector_quadrotor installatdion (see http://wiki.ros.org/hector_quadrotor/Tutorials/Quadrotor%20indoor%20SLAM%20demo for installation and setup details)
 
 **Setup**
-    -Create a catkin workspace and place this project within that workspace (see http://wiki.ros.org/catkin/Tutorials/create_a_workspace for help on creating the workspace)
-    -Once the workspace is created, run '''bash catkin_make ''' in the root of that workspace directory. This command is needed anytime the source files are modified. 
-    -Place the "bigapartment" folder in the ~/.gazebo/models directory (home/.gazebo/models)
+	*Create a catkin workspace and place this project within that workspace (see http://wiki.ros.org/catkin/Tutorials/create_a_workspace for help on creating the workspace)
+	*Once the workspace is created, run 'catkin_make' in the root of that workspace directory. This command is needed anytime the source files are modified. 
+	*Place the "bigapartment" folder in the ~/.gazebo/models directory (home/.gazebo/models)
 
-**Launch**
-    -Open a terminal window and type '''bash roslaunch quadroter_auto_nav big_apartment.launch '''
-    -Open another terminal window and type '''bash rosrun quadroter_auto_nav main ''' to start the navigation
-    -At this point, the vehicle will is placed in an unknown environment and will perform UCS path planning until the entire map is created. Wait until the environment is mapped until we can optimally traverse it. (Feel free to watch the quadrotor navigate, or go grab a snack/drink as this will take a couple of minutes)
-    -Once the map is fully explored, click "Publish Point" in RVIZ. Click a gridpoint in the map, and A* search will be performed to optimally calculate the path and navigate to that goal.
+## Usage
+	*Open a terminal window and type 'roslaunch quadroter_auto_nav big_apartment.launch'
+	*Open another terminal window and type 'rosrun quadroter_auto_nav main' to start the navigation
+	*At this point, the vehicle will is placed in an unknown environment and will perform UCS path planning until the entire map is created. Wait until the environment is mapped until we can optimally traverse it. (Feel free to watch the quadrotor navigate, or go grab a snack/drink as this will take a couple of minutes)
+	*Once the map is fully explored, click "Publish Point" in RVIZ. Click a gridpoint in the map, and A* search will be performed to optimally calculate the path and navigate to that goal.
 
 ## Examples
 
 When searching for a path, you can visualize all the states expanded by the green marker points as shown:
-![Node expansion](images/node_expansion.png?raw=true)
+![Node expansion](images/node_expansion.png?raw=true "State nodes expansion visualization")
 
 To disable the node expansion marker, uncheck the quadcopter_points_States_Expanded option:
-![Disable node expansion visualization](images/marker_states_off.png?raw=true)
+![Disable node expansion visualization](images/marker_states_off.png?raw=true "State nodes expansion visualization disabled")
 
 The calculated path is displayed with red marker points:
-![Calculated path](images/path_retrieved.png?raw=true)
-
+![Calculated path](images/path_retrieved.png?raw=true "Calculated path visualization")
 
 ## Contributors
 
