@@ -30,13 +30,13 @@ The main goal of this project is to create a starting point for a real, non-simu
 ## Examples
 
 When searching for a path, you can visualize all the states expanded by the green marker points as shown:
-[Node expansion!](images/node_expansion.png)
+![Node expansion](images/node_expansion.png?raw=true)
 
 To disable the node expansion marker, uncheck the quadcopter_points_States_Expanded option:
-[Disable node expansion visualization!](images/marker_states_off.png)
+![Disable node expansion visualization](images/marker_states_off.png?raw=true)
 
 The calculated path is displayed with red marker points:
-[Calculated path!](images/path_retrieved.png)
+![Calculated path](images/path_retrieved.png?raw=true)
 
 
 ## Contributors
