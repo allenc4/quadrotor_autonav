@@ -363,9 +363,9 @@ void AutoNav::doNav(){
 					debug->addPoint(CommonUtils::getTransformXPoint(i->x, map), CommonUtils::getTransformYPoint(i->y, map), 0);
 				}
 			}
-			debug->publishPoints();  // Place all debug points added in RVIZ UI
 			lookatDebug->publishPoints();  // Place all lookatDebug points added in RVIZ UI
 			averagedDebug->publishPoints();  // Place all averagedDebug points added in RVIZ UI
+			debug->publishPoints();  // Place all debug points added in RVIZ UI
 			sendMessage(lx, ly, lz, ax, ay, az);
 		}catch(tf::TransformException &ex)
 		{
@@ -374,7 +374,6 @@ void AutoNav::doNav(){
 		}
 	}
 }
-
 
 /**
  * Slowly land the drone.

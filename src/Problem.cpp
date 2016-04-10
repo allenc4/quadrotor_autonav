@@ -161,21 +161,14 @@ int Problem::heuristic(State& state){
 	// If the state is or is near an obstacle, add that estimated cost
 	score += this->checkStateForObstacle(state);
 
-	// If there is a goal state(s), the map is fully explored, so use Euclidean distance to estimate
+	// If there is a goal state(s), use Euclidean distance to estimate
 	// the cost to get from the current state to the goal
 	if(this->goalStates.size() > 0)
 	{
-		int smallestDistance = -1;
+		int smallestDistance = 1000000;
 		for(int i = 0; i < goalStates.size(); i++)
 		{
-			if (smallestDistance == -1)
-			{
-				smallestDistance = CommonUtils::getDistance(state.x, state.y, this->goalStates.at(i).x, this->goalStates.at(i).y);
-			}
-			else
-			{
-				smallestDistance = std::min((int)CommonUtils::getDistance(state.x, state.y, this->goalStates.at(i).x, this->goalStates.at(i).y), smallestDistance);
-			}
+			smallestDistance = std::min((int)CommonUtils::getDistance(state.x, state.y, this->goalStates.at(i).x, this->goalStates.at(i).y), smallestDistance);
 		}
 		score += smallestDistance;
 	}

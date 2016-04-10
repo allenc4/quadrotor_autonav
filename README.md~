@@ -27,18 +27,6 @@ The main goal of this project is to create a starting point for a real, non-simu
     -At this point, the vehicle will is placed in an unknown environment and will perform UCS path planning until the entire map is created. Wait until the environment is mapped until we can optimally traverse it. (Feel free to watch the quadrotor navigate, or go grab a snack/drink as this will take a couple of minutes)
     -Once the map is fully explored, click "Publish Point" in RVIZ. Click a gridpoint in the map, and A* search will be performed to optimally calculate the path and navigate to that goal.
 
-## Examples
-
-When searching for a path, you can visualize all the states expanded by the green marker points as shown:
-[Node expansion!](images/node_expansion.png)
-
-To disable the node expansion marker, uncheck the quadcopter_points_States_Expanded option:
-[Disable node expansion visualization!](images/marker_states_off.png)
-
-The calculated path is displayed with red marker points:
-[Calculated path!](images/path_retrieved.png)
-
-
 ## Contributors
 
 Chris Allen and Tyler Gauch
